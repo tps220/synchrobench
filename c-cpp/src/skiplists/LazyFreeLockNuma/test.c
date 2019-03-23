@@ -59,6 +59,7 @@
 
 inline long rand_range(long r); /* declared in test.c */
 
+HazardContainer_t* container;
 VOLATILE AO_t stop_condition;
 unsigned int global_seed;
 #ifdef TLS
@@ -103,7 +104,7 @@ extern searchLayer_t** numaLayers;
 extern numa_allocator_t** allocators;
 extern int numberNumaZones;
 extern unsigned int levelmax;
-extern dataLayerThread_t* remover; 
+extern dataLayerThread_t* remover;
 typedef struct zone_init_args {
 	int 		numa_zone;
 	node_t* 	head;
@@ -188,6 +189,7 @@ typedef struct thread_data {
 	searchLayer_t* sl;
 	barrier_t *barrier;
 	unsigned long failures_because_contention;
+  HazardNode_t* hazardNode;
 } thread_data_t;
 
 void* test(void *data) {
@@ -195,6 +197,7 @@ void* test(void *data) {
 	unsigned int val = 0;
 
 	thread_data_t *d = (thread_data_t *)data;
+  HazardNode_t* hazardNode = d -> hazardNode;
 
 	//run test thread on correct NUMA zone
 	searchLayer_t* sl = d -> sl;
@@ -220,7 +223,7 @@ void* test(void *data) {
 			if (last < 0) { // add
 
 				val = rand_range_re(&d->seed, d->range);
-				if (sl_add(sl, val)) {
+				if (sl_add(sl, val, hazardNode)) {
 					d->nb_added++;
 					last = val;
 				}
@@ -228,7 +231,7 @@ void* test(void *data) {
 
 			} else { // remove
 				if (d->alternate) { // alternate mode (default)
-					if (sl_remove(sl, last)) {
+					if (sl_remove(sl, last, hazardNode)) {
 						d->nb_removed++;
 					}
 					last = -1;
@@ -236,7 +239,7 @@ void* test(void *data) {
 					/* Random computation only in non-alternated cases */
 					val = rand_range_re(&d->seed, d->range);
 					/* Remove one random value */
-					if (sl_remove(sl, val)) {
+					if (sl_remove(sl, val, hazardNode)) {
 						d->nb_removed++;
 						/* Repeat until successful, to avoid size variations */
 						last = -1;
@@ -267,7 +270,7 @@ void* test(void *data) {
 				val = rand_range_re(&d->seed, d->range);
 			}
 
-			if (sl_contains(sl, val))
+			if (sl_contains(sl, val, hazardNode))
 				d->nb_found++;
 			d->nb_contains++;
 
@@ -563,7 +566,7 @@ int main(int argc, char **argv)
 		while (searchLayerSize(numaLayers[i]) < initial) {}
 		printf("Index Layer %d filled\n", i);
 	}
-	
+
 	usleep(10);
 
 	size = sl_size(head);
@@ -575,6 +578,8 @@ int main(int argc, char **argv)
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	int sl_index = 0;
+  HazardNode_t* hazardNode = constructHazardNode();
+  HazardContainer = constructHazardContainer(hazardNode, 0);
 	for (i = 0; i < nb_threads; i++) {
 		data[i].first = last;
 		data[i].range = range;
@@ -599,8 +604,13 @@ int main(int argc, char **argv)
 		data[i].max_retries = 0;
 		data[i].seed = rand();
 		data[i].sl = numaLayers[sl_index++];
+    data[i].hazardNode = hazardNode;
 		data[i].barrier = &barrier;
 		data[i].failures_because_contention = 0;
+    if (i != nb_threads - 1) {
+      hazardNode -> next = constructHazardNode();
+      hazardNode = hazardNode -> next;
+    }
 		if (pthread_create(&threads[i], &attr, test, (void *)(&data[i])) != 0) {
 			fprintf(stderr, "Error creating thread\n");
 			exit(1);
@@ -758,4 +768,3 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-

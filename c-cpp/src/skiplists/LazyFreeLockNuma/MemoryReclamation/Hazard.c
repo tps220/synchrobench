@@ -3,6 +3,7 @@
 #ifndef HAZARD_C
 #define HAZARD_C
 #include "Hazard.h"
+#include "Nodes.h"
 
 HazardNode_t* constructHazardNode() {
     HazardNode_t* node = (HazardNode_t*)malloc(sizeof(HazardNode_t));

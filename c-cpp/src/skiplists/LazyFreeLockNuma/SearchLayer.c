@@ -49,7 +49,7 @@ void start(searchLayer_t* numask, int sleep_time) {
 		numask -> finished = 0;
 		numask -> stopGarbageCollection = 0;
 		pthread_create(&numask -> updater, NULL, updateNumaZone, (void*)numask);
-        pthread_create(&numask -> reclaimer, NULL, garbageCollectionIndexLayer, (void*)numask);
+    pthread_create(&numask -> reclaimer, NULL, garbageCollectionIndexLayer, (void*)numask);
 	}
 }
 
@@ -58,7 +58,7 @@ void stop(searchLayer_t* numask) {
 		numask -> finished = 1;
 		pthread_join(numask -> updater, NULL);
 		numask -> stopGarbageCollection = 1;
-        pthread_join(numask -> reclaimer, NULL);
+    pthread_join(numask -> reclaimer, NULL);
 		numask -> running = 0;
 	}
 }
@@ -97,28 +97,32 @@ int runJob(inode_t* sentinel, q_node_t* job, int zone, job_queue_t* garbage) {
 	return 1;
 }
 
+inline void collectGarbage(job_queue_t* garbage, LinkedList_t* retiredList) {
+  q_node_t* job;
+  while ((job = pop(garbage)) != NULL) {
+    RETIRE_INDEX_NODE(retiredList, job -> node);
+  }
+}
+
 void* garbageCollectionIndexLayer(void* args) {
-    searchLayer_t* numask = (searchLayer_t*)args;
-    job_queue_t* garbage = numask -> garbage;
-    
+  searchLayer_t* numask = (searchLayer_t*)args;
+  job_queue_t* garbage = numask -> garbage;
+
 	//Pin to Zone & CPU
 	cpu_set_t cpuset;
 	CPU_ZERO(&cpuset);
 	CPU_SET(numaZone, &cpuset);
 	pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
-    //Instantiate Retired List
-    LinkedList_t* retiredList = constructLinkedList();
+  //Instantiate Retired List
+  LinkedList_t* retiredList = constructLinkedList();
 
 	while (numask -> stopGarbageCollection == 0) {
-        usleep(numask -> sleep_time);
-        q_node_t* job;
-        while ((job = pop(garbage)) != NULL) {
-            RETIRE_INDEX_NODE(retiredList, job -> node);
-        }
-    }
-
-    destructLinkedList(retiredList);  
+    usleep(numask -> sleep_time);
+    collectGarbage(garbage, retiredList);
+  }
+  collectGarbage(garbage, retiredList);
+  destructLinkedList(retiredList);
 }
 
 #endif

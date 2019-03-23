@@ -4,6 +4,7 @@
 #include "SkipListLazyLock.h"
 #include "Atomic.h"
 #include "Hazard.h"
+#include "JobQueue.h"
 
 //Inserts a value into the skip list if it doesn't already exist
 int add(inode_t *sentinel, int val, node_t* dataLayer, int zone) {
@@ -54,7 +55,7 @@ int removeNode(inode_t *sentinel, int val, int zone) {
     successors[i] = current;
   }
 
-  //if the node contains the targeted value, 
+  //if the node contains the targeted value,
   //remove the node, decrement the data layer references value, and return true
   //otherwise return false
   inode_t* candidate = current;
@@ -62,6 +63,7 @@ int removeNode(inode_t *sentinel, int val, int zone) {
     for (int i = 0; i < candidate -> topLevel; i++) {
         predecessors[i] -> next[i] = successors[i] -> next[i];
     }
+    push(numaLayers[zone] -> garbage, val, MEMORY_RECLAMATION, candidate);
     return 1;
   }
   return 0;

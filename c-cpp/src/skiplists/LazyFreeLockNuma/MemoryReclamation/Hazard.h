@@ -19,7 +19,7 @@ typedef struct HazardContainer {
     int H;
 } HazardContainer_t;
 
-HazardContainer_t* constructHazardContainer();
+HazardContainer_t* constructHazardContainer(HazardNode_t* head, int H);
 
 extern HazardContainer_t* memoryLedger;
 
