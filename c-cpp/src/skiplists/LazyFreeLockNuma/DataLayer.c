@@ -24,12 +24,12 @@ inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazard
 	inode_t *previous = sentinel, *current = NULL;
 	for (int i = previous -> topLevel - 1; i >= 0; i--) {
     hazardNode -> hp1 = previous -> next[i];
-		current = previous -> next[i];
+		current = (inode_t*)hazardNode -> hp1;
 		while (current -> val < val) {
       hazardNode -> hp0 = current;
-			previous = current;
+			previous = (inode_t*)hazardNode -> hp0;
       hazardNode -> hp1 = current -> next[i];
-			current = current -> next[i];
+			current = (inode_t*)hazardNode -> hp1;
 		}
 	}
   hazardNode -> hp0 = previous -> dataLayer;
@@ -56,7 +56,7 @@ int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
 	node_t* current = getElement(numask -> sentinel, val, hazardNode);
 	while (current -> val < val) {
     hazardNode -> hp0 = current -> next;
-		current = hazardNode -> hp0;
+		current = (node_t*)hazardNode -> hp0;
 	}
 	int retval = current -> val == val && current -> markedToDelete == 0;
   hazardNode -> hp0 = NULL;
@@ -69,12 +69,12 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
 	while (retry) {
 		node_t* previous = getElement(numask -> sentinel, val, hazardNode);
     hazardNode -> hp1 = previous -> next;
-		node_t* current = previous -> next;
+		node_t* current = (node_t*)previous -> next;
 		while (current -> val < val) {
       hazardNode -> hp0 = current;
-			previous = current;
+			previous = (node_t*)hazardNode -> hp0;
       hazardNode -> hp1 = current -> next;
-			current = current -> next;
+			current = (node_t*)hazardNode -> hp1;
 		}
 		pthread_mutex_lock(&previous -> lock);
 		pthread_mutex_lock(&current -> lock);
@@ -82,13 +82,11 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     hazardNode -> hp1 = NULL;
 		if (validateLink(previous, current)) {
       if (current -> val == val && current -> markedToDelete) {
-        int retval = 0;
-        if (__sync_val_compare_and_swap(&current -> markedToDelete, 1, 0) == 1) {
-          retval = 1;
-        }
+        current -> markedToDelete = 0;
+				current -> fresh = 1;
         pthread_mutex_unlock(&previous -> lock);
 				pthread_mutex_unlock(&current -> lock);
-        return retval;
+        return 1;
       }
 			else if (current -> val == val) {
 				pthread_mutex_unlock(&previous -> lock);
@@ -108,26 +106,34 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
 }
 
 int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) { //TODO: redo this method for proper locking
-	node_t* previous = getElement(numask -> sentinel, val, hazardNode);
-  hazardNode -> hp1 = previous -> next;
-  node_t* current = previous -> next;
-  while (current -> val < val) {
-    hazardNode -> hp0 = current;
-    previous = current;
-    hazardNode -> hp1 = current -> next;
-    current = current -> next;
-  }
-  hazardNode -> hp0 = NULL;
-  hazardNode -> hp1 = NULL;
-	if (current -> val != val || current -> markedToDelete == 1) {
-		return 0;
+	char retry = 1;
+	while (retry) {
+		node_t* previous = getElement(numask -> sentinel, val, hazardNode);
+    hazardNode -> hp1 = previous -> next;
+		node_t* current = (node_t*)previous -> next;
+		while (current -> val < val) {
+      hazardNode -> hp0 = current;
+			previous = (node_t*)hazardNode -> hp0;
+      hazardNode -> hp1 = current -> next;
+			current = (node_t*)hazardNode -> hp1;
+		}
+		pthread_mutex_lock(&previous -> lock);
+		pthread_mutex_lock(&current -> lock);
+    hazardNode -> hp0 = NULL;
+    hazardNode -> hp1 = NULL;
+		if (validateLink(previous, current)) {
+			if (current -> val != val || current -> markedToDelete) {
+				return 0;
+			}
+			current -> markedToDelete = 1;
+			current -> fresh = 1;
+			pthread_mutex_unlock(&previous -> lock);
+			pthread_mutex_unlock(&current -> lock);
+			return 1;
+		}
+		pthread_mutex_unlock(&previous -> lock);
+		pthread_mutex_unlock(&current -> lock);
 	}
-	//incorporate atomicity here with CAS
-	if (__sync_val_compare_and_swap(&current -> markedToDelete, 0, 1) == 0) {
-		current -> fresh = 1;
-		return 1;
-	}
-	return 0;
 }
 
 void* backgroundRemoval(void* input) {
@@ -178,23 +184,26 @@ static dataLayerThread_t* constructDataLayerThread() {
 	return thread;
 }
 
-void startDataLayerThread(node_t* sentinel) {
+void startDataLayer(node_t* sentinel) {
 	if (remover == NULL) {
 		remover = constructDataLayerThread();
 	}
 	if (remover -> running == 0) {
-		remover -> running = 1;
+		stopGarbageCollection = 0;
+		pthread_create(&reclaimer, NULL, garbageCollectDataLayer);
 		remover -> finished = 0;
 		remover -> sentinel = sentinel;
 		pthread_create(&remover -> runner, NULL, backgroundRemoval, (void*)remover);
-    pthread_create(reclaimer, NULL, garbageCollectDataLayer);
+		remover -> running = 1;
 	}
 }
 
-void stopDataLayerThread() {
+void stopDataLayer() {
 	if (remover -> running) {
 		remover -> finished = 1;
 		pthread_join(remover -> runner, NULL);
+		stopGarbageCollection = 1;
+		pthread_join(reclaimer, NULL);
 		remover -> running = 0;
 	}
 }
@@ -218,7 +227,7 @@ void* garbageCollectDataLayer(void* args) {
   garbage = constructJobQueue();
 
 	while (stopGarbageCollection == 0) {
-    usleep(sleep_time);
+    usleep(1000);
     collectGarbage(garbage, retiredList);
   }
   collectGarbage(garbage, retiredList);

@@ -25,6 +25,7 @@ void destructJobQueue(job_queue_t* jobs) {
 		runner = runner -> next;
 		free(runner);
 	}
+	free(jobs);
 }
 
 void push(job_queue_t* jobs, int val, Job operation, node_t* node) {

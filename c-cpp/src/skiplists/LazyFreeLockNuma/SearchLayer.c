@@ -19,6 +19,7 @@ searchLayer_t* constructSearchLayer(inode_t* sentinel, int zone) {
 	numask -> sentinel = sentinel;
 	numask -> numaZone = zone;
 	numask -> updates = constructJobQueue();
+	numask -> garbage = constructJobQueue();
 	numask -> finished = 0;
 	numask -> stopGarbageCollection = 0;
 	numask -> running = 0;
@@ -29,6 +30,7 @@ searchLayer_t* constructSearchLayer(inode_t* sentinel, int zone) {
 searchLayer_t* destructSearchLayer(searchLayer_t* numask) {
 	stop(numask);
 	destructJobQueue(numask -> updates);
+	destructJobQueue(numask -> garbage);
   destructIndexSkipList(numask -> sentinel);
 	free(numask);
 }
@@ -43,18 +45,18 @@ int searchLayerSize(searchLayer_t* numask) {
 	return size;
 }
 
-void start(searchLayer_t* numask, int sleep_time) {
+void startIndexLayer(searchLayer_t* numask, int sleep_time) {
 	numask -> sleep_time = sleep_time;
 	if (numask -> running == 0) {
     numask -> stopGarbageCollection = 0;
     numask -> finished = 0;
+		pthread_create(&numask -> reclaimer, NULL, garbageCollectionIndexLayer, (void*)numask);
 		pthread_create(&numask -> updater, NULL, updateNumaZone, (void*)numask);
-    pthread_create(&numask -> reclaimer, NULL, garbageCollectionIndexLayer, (void*)numask);
     numask -> running = 1;
 	}
 }
 
-void stop(searchLayer_t* numask) {
+void stopIndexLayer(searchLayer_t* numask) {
 	if (numask -> running) {
 		numask -> finished = 1;
 		pthread_join(numask -> updater, NULL);

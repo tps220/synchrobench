@@ -4,7 +4,10 @@
 #define HAZARD_H
 
 #include "LinkedList.h"
+#include "Allocator.h"
+
 #define MAX_DEPTH 5
+extern numa_allocator_t** allocators;
 
 typedef struct HazardNode {
     void* hp0;
@@ -12,7 +15,8 @@ typedef struct HazardNode {
     struct HazardNode* next;
 } HazardNode_t;
 
-HazardNode_t* constructHazardNode();
+HazardNode_t* constructHazardNode(int zone);
+void destructHazardNode(HazardNode_t* node);
 
 typedef struct HazardContainer {
     HazardNode_t* head;
@@ -20,6 +24,7 @@ typedef struct HazardContainer {
 } HazardContainer_t;
 
 HazardContainer_t* constructHazardContainer(HazardNode_t* head, int H);
+void destructHazardContainer(HazardContainer_t* container);
 
 extern HazardContainer_t* memoryLedger;
 

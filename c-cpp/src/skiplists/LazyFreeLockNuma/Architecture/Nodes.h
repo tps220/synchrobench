@@ -14,11 +14,11 @@ extern unsigned int levelmax;
 //data layer node
 typedef struct node {
  	int val; //stores the value at the node
-  	volatile int markedToDelete; //stores whether marked for deletion
-  	volatile int references; //stores the number of pointers pointing to the data layer node form the numa zones
-  	volatile int fresh; //identifies whether the node was recently removed/inserted, and needs to be propogated to index layers
-  	struct node* next; //stores the next data layer node
-  	pthread_mutex_t lock; //node-specific mutex
+  volatile int markedToDelete; //stores whether marked for deletion
+  volatile int references; //stores the number of pointers pointing to the data layer node form the numa zones
+  volatile int fresh; //identifies whether the node was recently removed/inserted, and needs to be propogated to index layers
+  struct node* next; //stores the next data layer node
+  pthread_mutex_t lock; //node-specific mutex
 } node_t;
 
 node_t* constructNode(int val, int intitialReferences);

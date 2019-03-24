@@ -5,11 +5,15 @@
 #include "Hazard.h"
 #include "Nodes.h"
 
-HazardNode_t* constructHazardNode() {
-    HazardNode_t* node = (HazardNode_t*)malloc(sizeof(HazardNode_t));
+HazardNode_t* constructHazardNode(int zone) {
+    HazardNode_t* node = (HazardNode_t*)nalloc(allocators[zone], sizeof(HazardNode_t));
     node -> hp0 = node -> hp1 = NULL;
     node -> next = NULL;
     return node;
+}
+
+HazardNode_t* destructHazardNode(HazardNode_t* node) {
+  free(node);
 }
 
 HazardContainer_t* constructHazardContainer(HazardNode_t* head, int H) {
@@ -17,6 +21,16 @@ HazardContainer_t* constructHazardContainer(HazardNode_t* head, int H) {
     container -> head = head;
     container -> H = H;
     return container;
+}
+
+HazardContainer_t* destructHazardContainer(HazardContainer_t* container) {
+  HazardNode_t* runner = container -> head;
+  while (runner != NULL) {
+    HazardNode_t* temp = runner;
+    runner = runner -> next;
+    destructHazardNode(temp);
+  }
+  free(container);
 }
 
 void retireElement(LinkedList_t* retiredList, void* ptr) {
@@ -39,7 +53,7 @@ void scan(LinkedList_t* retiredList) {
         }
         runner = runner -> next;
     }
-    
+
     //Compare retired candidates against active hazard nodes, reclaiming or procastinating
     int listSize = retiredList -> size;
     void** tmpList = (void**)malloc(listSize * sizeof(void*));

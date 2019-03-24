@@ -27,4 +27,13 @@ int sl_size(node_t* sentinel) {
 	return size;
 }
 
+void sl_destruct(node_t* sentinel) {
+	node_t* runner = sentinel;
+	while (runner != NULL) {
+		node_t* temp = runner;
+		runner = runner -> next;
+		free(runner);
+	}
+}
+
 #endif

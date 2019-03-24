@@ -22,7 +22,7 @@ typedef struct searchLayer {
 searchLayer_t* constructSearchLayer(inode_t* sentinel, int zone);
 searchLayer_t* destructSearchLayer(searchLayer_t* searcher);
 int searchLayerSize(searchLayer_t* numask);
-void start(searchLayer_t* numask, int sleep_time);
-void stop(searchLayer_t* numask);
+void startIndexLayer(searchLayer_t* numask, int sleep_time);
+void stopIndexLayer(searchLayer_t* numask);
 
 #endif
