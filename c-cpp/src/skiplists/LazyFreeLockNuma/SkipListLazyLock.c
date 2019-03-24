@@ -3,6 +3,7 @@
 
 #include "SkipListLazyLock.h"
 #include "Atomic.h"
+#include "Allocator.h"
 #include "Hazard.h"
 #include "JobQueue.h"
 
@@ -67,6 +68,15 @@ int removeNode(inode_t *sentinel, int val, int zone) {
     return 1;
   }
   return 0;
+}
+
+void destructIndexSkipList(inode_t* sentinel) {
+  inode_t* runner = sentinel;
+  while (runner != NULL) {
+    inode_t* temp = runner;
+    runner = runner -> next;
+    nfree(temp);
+  }
 }
 
 #endif

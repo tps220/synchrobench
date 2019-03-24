@@ -20,7 +20,6 @@ inline int validateLink(node_t* previous, node_t* current);
 inline int validateRemoval(node_t* previous, node_t* current);
 
 inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode) {
-  hazardNode -> hp0 = sentinel;
 	inode_t *previous = sentinel, *current = NULL;
 	for (int i = previous -> topLevel - 1; i >= 0; i--) {
     hazardNode -> hp1 = previous -> next[i];
@@ -56,7 +55,7 @@ int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
 	node_t* current = getElement(numask -> sentinel, val, hazardNode);
 	while (current -> val < val) {
     hazardNode -> hp0 = current -> next;
-		current = current -> next;
+		current = hazardNode -> hp0;
 	}
 	int retval = current -> val == val && current -> markedToDelete == 0;
   hazardNode -> hp0 = NULL;
