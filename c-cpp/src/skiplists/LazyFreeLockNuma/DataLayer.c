@@ -4,6 +4,7 @@
 
 #include "DataLayer.h"
 #include "Atomic.h"
+#include "LinkedList.h"
 #include <pthread.h>
 #include <assert.h>
 #include <unistd.h>
@@ -15,7 +16,7 @@ job_queue_t* garbage;
 LinkedList_t* retiredList;
 
 //Helper Functions
-inline node_t* getElement(inode_t* sentinel, const int val);
+inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode);
 inline void dispatchSignal(int val, node_t* dataLayer, Job operation);
 inline int validateLink(node_t* previous, node_t* current);
 inline int validateRemoval(node_t* previous, node_t* current);
@@ -190,7 +191,7 @@ void startDataLayer(node_t* sentinel) {
 	}
 	if (remover -> running == 0) {
 		stopGarbageCollection = 0;
-		pthread_create(&reclaimer, NULL, garbageCollectDataLayer);
+		pthread_create(&reclaimer, NULL, garbageCollectDataLayer, NULL);
 		remover -> finished = 0;
 		remover -> sentinel = sentinel;
 		pthread_create(&remover -> runner, NULL, backgroundRemoval, (void*)remover);
@@ -216,12 +217,6 @@ inline void collectGarbage(job_queue_t* garbage, LinkedList_t* retiredList) {
 }
 
 void* garbageCollectDataLayer(void* args) {
-	//Pin to Zone & CPU
-	cpu_set_t cpuset;
-	CPU_ZERO(&cpuset);
-	CPU_SET(numaZone, &cpuset);
-	pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-
   //Instantiate Retired List and Garbage
   retiredList = constructLinkedList();
   garbage = constructJobQueue();

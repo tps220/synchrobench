@@ -28,8 +28,8 @@ void destructHazardContainer(HazardContainer_t* container);
 
 extern HazardContainer_t* memoryLedger;
 
-void retireElement(HazardNode_t* hazardNode, void* ptr, void (*reclaimMemory)(void*));
-void scan(HazardNode_t* hazardNode, void (*reclaimMemory)(void*));
+void retireElement(LinkedList_t* hazardNode, void* ptr, void (*reclaimMemory)(void*));
+void scan(LinkedList_t* hazardNode, void (*reclaimMemory)(void*));
 void reclaimIndexNode(void* ptr);
 void reclaimDataLayerNode(void* ptr);
 

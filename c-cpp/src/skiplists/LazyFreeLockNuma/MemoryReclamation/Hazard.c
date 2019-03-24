@@ -4,6 +4,7 @@
 #define HAZARD_C
 #include "Hazard.h"
 #include "Nodes.h"
+#include "Atomic.h"
 
 HazardNode_t* constructHazardNode(int zone) {
     HazardNode_t* node = (HazardNode_t*)nalloc(allocators[zone], sizeof(HazardNode_t));
@@ -12,7 +13,7 @@ HazardNode_t* constructHazardNode(int zone) {
     return node;
 }
 
-HazardNode_t* destructHazardNode(HazardNode_t* node) {
+void destructHazardNode(HazardNode_t* node) {
   free(node);
 }
 
@@ -23,7 +24,7 @@ HazardContainer_t* constructHazardContainer(HazardNode_t* head, int H) {
     return container;
 }
 
-HazardContainer_t* destructHazardContainer(HazardContainer_t* container) {
+void destructHazardContainer(HazardContainer_t* container) {
   HazardNode_t* runner = container -> head;
   while (runner != NULL) {
     HazardNode_t* temp = runner;
@@ -33,23 +34,23 @@ HazardContainer_t* destructHazardContainer(HazardContainer_t* container) {
   free(container);
 }
 
-void retireElement(LinkedList_t* retiredList, void* ptr) {
-    push(retiredList, ptr);
+void retireElement(LinkedList_t* retiredList, void* ptr, void (*reclaimMemory)(void*)) {
+    ll_push(retiredList, ptr);
     if (retiredList -> size >= MAX_DEPTH) {
-        scan(retiredList);
+      scan(retiredList, reclaimMemory);
     }
 }
 
-void scan(LinkedList_t* retiredList) {
+void scan(LinkedList_t* retiredList, void (*reclaimMemory)(void*)) {
     //Collect all valid hazard pointers across application threads
     LinkedList_t* ptrList = constructLinkedList();
     HazardNode_t* runner = memoryLedger -> head;
     while (runner != NULL) {
         if (runner -> hp0 != NULL) {
-            push(ptrList, runner -> hp0);
+            ll_push(ptrList, runner -> hp0);
         }
         if (runner -> hp1 != NULL) {
-            push(ptrList, runner -> hp1);
+            ll_push(ptrList, runner -> hp1);
         }
         runner = runner -> next;
     }
@@ -57,10 +58,10 @@ void scan(LinkedList_t* retiredList) {
     //Compare retired candidates against active hazard nodes, reclaiming or procastinating
     int listSize = retiredList -> size;
     void** tmpList = (void**)malloc(listSize * sizeof(void*));
-    popAll(retiredList, tmpList);
+    ll_popAll(retiredList, tmpList);
     for (int i = 0; i < listSize; i++) {
         if (findElement(ptrList, tmpList[i])) {
-            push(retiredList, tmpList[i]);
+            ll_push(retiredList, tmpList[i]);
         }
         else {
             reclaimMemory(tmpList[i]);

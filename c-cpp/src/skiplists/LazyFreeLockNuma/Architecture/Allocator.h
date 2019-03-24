@@ -45,7 +45,7 @@ typedef struct numa_allocator {
 
 //constructors and destructors
 numa_allocator_t* constructAllocator(unsigned ssize);
-void destructAllocator(numa_allocator_t* allocator, unsigned ssize);
+void destructAllocator(numa_allocator_t* allocator);
 
 //driver methods
 void* nalloc(numa_allocator_t* allocator, unsigned ssize);

@@ -5,6 +5,8 @@
 #include "SearchLayer.h"
 #include "SkipListLazyLock.h"
 #include "JobQueue.h"
+#include "LinkedList.h"
+#include "Hazard.h"
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
@@ -28,10 +30,15 @@ searchLayer_t* constructSearchLayer(inode_t* sentinel, int zone) {
 }
 
 searchLayer_t* destructSearchLayer(searchLayer_t* numask) {
-	stop(numask);
+	stopIndexLayer(numask);
 	destructJobQueue(numask -> updates);
 	destructJobQueue(numask -> garbage);
-  destructIndexSkipList(numask -> sentinel);
+	inode_t* runner = numask -> sentinel;
+  	while (runner != NULL) {
+    	inode_t* temp = runner;
+    	runner = runner -> next[0];
+    	destructIndexNode(temp, numask -> numaZone);
+  	}
 	free(numask);
 }
 
@@ -48,11 +55,11 @@ int searchLayerSize(searchLayer_t* numask) {
 void startIndexLayer(searchLayer_t* numask, int sleep_time) {
 	numask -> sleep_time = sleep_time;
 	if (numask -> running == 0) {
-    numask -> stopGarbageCollection = 0;
-    numask -> finished = 0;
+    	numask -> stopGarbageCollection = 0;
+    	numask -> finished = 0;
 		pthread_create(&numask -> reclaimer, NULL, garbageCollectionIndexLayer, (void*)numask);
 		pthread_create(&numask -> updater, NULL, updateNumaZone, (void*)numask);
-    numask -> running = 1;
+    	numask -> running = 1;
 	}
 }
 
@@ -61,16 +68,16 @@ void stopIndexLayer(searchLayer_t* numask) {
 		numask -> finished = 1;
 		pthread_join(numask -> updater, NULL);
 		numask -> stopGarbageCollection = 1;
-    pthread_join(numask -> reclaimer, NULL);
+    	pthread_join(numask -> reclaimer, NULL);
 		numask -> running = 0;
 	}
 }
 
 void* updateNumaZone(void* args) {
 	searchLayer_t* numask = (searchLayer_t*)args;
-	const job_queue_t* updates = numask -> updates;
-	const job_queue_t* garbage = numask -> garbage;
-	const inode_t* sentinel = numask -> sentinel;
+	job_queue_t* updates = numask -> updates;
+	job_queue_t* garbage = numask -> garbage;
+	inode_t* sentinel = numask -> sentinel;
 	const int numaZone = numask -> numaZone;
 
 	//Pin to Zone & CPU
@@ -92,7 +99,7 @@ int runJob(inode_t* sentinel, q_node_t* job, int zone, job_queue_t* garbage) {
 		return 0;
 	}
 	else if (job -> operation == INSERTION) {
-		add(sentinel, job -> val, job -> node, zone);
+		add(sentinel, job -> val, (node_t*)job -> node, zone);
 	}
 	else if (job -> operation == REMOVAL) {
 		removeNode(sentinel, job -> val, zone, garbage);
@@ -114,7 +121,7 @@ void* garbageCollectionIndexLayer(void* args) {
 	//Pin to Zone & CPU
 	cpu_set_t cpuset;
 	CPU_ZERO(&cpuset);
-	CPU_SET(numaZone, &cpuset);
+	CPU_SET(numask -> numaZone, &cpuset);
 	pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
   //Instantiate Retired List
@@ -127,5 +134,6 @@ void* garbageCollectionIndexLayer(void* args) {
   collectGarbage(garbage, retiredList);
   destructLinkedList(retiredList);
 }
+
 
 #endif

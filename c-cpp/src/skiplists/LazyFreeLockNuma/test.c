@@ -59,7 +59,7 @@
 
 inline long rand_range(long r); /* declared in test.c */
 
-HazardContainer_t* container;
+extern HazardContainer_t* memoryLedger;
 VOLATILE AO_t stop_condition;
 unsigned int global_seed;
 #ifdef TLS
@@ -516,7 +516,7 @@ int main(int argc, char **argv) {
 
 	//Initialize Hazard Nodes
 	HazardNode_t* hazardNode = constructHazardNode(0);
-	HazardContainer = constructHazardContainer(hazardNode, 0);
+	memoryLedger = constructHazardContainer(hazardNode, 0);
 
 	stop_condition = 0;
   global_seed = rand();
@@ -760,7 +760,7 @@ int main(int argc, char **argv) {
 		destructAllocator(allocators[i]);
 	}
 	sl_destruct(head);
-	destructHazardContainer(container);
+	destructHazardContainer(memoryLedger);
 
 	// Cleanup STM
 	//TM_SHUTDOWN();

@@ -4,6 +4,7 @@
 #include "SearchLayer.h"
 #include "Nodes.h"
 #include "JobQueue.h"
+#include "Hazard.h"
 
 extern searchLayer_t** numaLayers;
 extern int numberNumaZones;
@@ -22,6 +23,7 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode);
 
 //Background functions
 void* backgroundRemoval(void* input);
+void* garbageCollectDataLayer(void* input);
 void startDataLayer(node_t* sentinel);
 void stopDataLayer();
 

@@ -7,18 +7,18 @@
 typedef enum job {
 	INSERTION,
 	REMOVAL,
-	MEMORY_COLLECTION,
+	MEMORY_RECLAMATION,
 	NONE
 } Job;
 
 typedef struct q_node {
 	int val;
 	Job operation;
-	node_t* node;
+	void* node;
 	struct q_node* next;
 } q_node_t;
 
-q_node_t* constructQNode(int val, Job operation, node_t* node);
+q_node_t* constructQNode(int val, Job operation, void* node);
 
 typedef struct job_queue {
 	q_node_t* head;
@@ -28,7 +28,7 @@ typedef struct job_queue {
 
 job_queue_t* constructJobQueue();
 void destructJobQueue(job_queue_t* jobs);
-void push(job_queue_t* jobs, int val, Job operation, node_t* node);
+void push(job_queue_t* jobs, int val, Job operation, void* node);
 q_node_t* pop(job_queue_t* jobs);
 
 
