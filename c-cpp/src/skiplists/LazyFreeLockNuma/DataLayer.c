@@ -1,3 +1,4 @@
+//Data Layer represents a linked list of real data elements
 #ifndef DATA_LAYER_C
 #define DATA_LAYER_C
 
