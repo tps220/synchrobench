@@ -150,7 +150,7 @@ void* backgroundRemoval(void* input) {
 		node_t* current = sentinel -> next;
 		while (current -> next != NULL) {
 			if (current -> fresh) {
-				current -> fresh = 0; //unset as fresh, need a CAS here? only thread operating on structure
+				current -> fresh = 0;
 				if (current -> markedToDelete) {
 					dispatchSignal(current -> val, current, REMOVAL);
 				}
@@ -164,12 +164,12 @@ void* backgroundRemoval(void* input) {
 				pthread_mutex_lock(&current -> lock);
 				if ((valid = validateRemoval(previous, current)) != 0) {
 					previous -> next = current -> next;
-					push(garbage, current -> val, MEMORY_RECLAMATION, current);
 				}
 				pthread_mutex_unlock(&previous -> lock);
 				pthread_mutex_unlock(&current -> lock);
 				if (valid) {
-					current = current -> next;
+					//push(garbage, current -> val, MEMORY_RECLAMATION, current); //isolation
+					current = previous -> next;
 					continue;
 				}
 			}

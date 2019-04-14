@@ -57,11 +57,11 @@ int searchLayerSize(searchLayer_t* numask) {
 void startIndexLayer(searchLayer_t* numask, int sleep_time) {
 	numask -> sleep_time = sleep_time;
 	if (numask -> running == 0) {
-    	numask -> stopGarbageCollection = 0;
-    	numask -> finished = 0;
+    numask -> stopGarbageCollection = 0;
+    numask -> finished = 0;
 		pthread_create(&numask -> reclaimer, NULL, garbageCollectionIndexLayer, (void*)numask);
 		pthread_create(&numask -> updater, NULL, updateNumaZone, (void*)numask);
-    	numask -> running = 1;
+    numask -> running = 1;
 	}
 }
 
@@ -121,7 +121,7 @@ inline void collectGarbage(job_queue_t* garbage, LinkedList_t* retiredList, int 
 void* garbageCollectionIndexLayer(void* args) {
   searchLayer_t* numask = (searchLayer_t*)args;
   job_queue_t* garbage = numask -> garbage;
-  int zone = numask -> numaZone;
+  const int zone = numask -> numaZone;
 
 	//Pin to Zone & CPU
 	cpu_set_t cpuset;
@@ -140,11 +140,11 @@ void* garbageCollectionIndexLayer(void* args) {
   //destruct linked list
   int listSize = retiredList -> size;
   void** tmpList = (void**)malloc(listSize * sizeof(void*));
-  ll_popAll(retiredList, tmpList);
-  free(retiredList);
+  ll_pipeAndRemove(retiredList, tmpList);
   for (int i = 0; i < listSize; i++) {
   	destructIndexNode((inode_t*)tmpList[i], zone);
   }
+	free(retiredList);
 }
 
 

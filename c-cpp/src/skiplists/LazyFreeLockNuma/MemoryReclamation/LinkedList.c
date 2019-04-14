@@ -11,7 +11,7 @@ ListNode_t* constructListNode(void* ptr) {
 }
 
 void destructListNode(ListNode_t* node) {
-    free(node -> data);
+    free(node -> data); //doublefree potential
     free(node);
 }
 
@@ -20,11 +20,6 @@ LinkedList_t* constructLinkedList() {
     ll -> head = ll -> tail = NULL;
     ll -> size = 0;
     return ll;
-}
-
-void resetLinkedList(LinkedList_t* ll) {
-    ll -> head = ll -> tail = NULL;
-    ll -> size = 0;
 }
 
 void destructLinkedList(LinkedList_t* ll) {
@@ -41,11 +36,11 @@ int findElement(LinkedList_t* ll, void* node) {
     ListNode_t* runner = ll -> head;
     while (runner != NULL) {
         if (runner -> data == node) {
-            return TRUE;
+            return 1;
         }
         runner = runner -> next;
     }
-    return FALSE;
+    return 0;
 }
 
 void ll_push(LinkedList_t* ll, void* ptr) {
@@ -77,7 +72,7 @@ void* ll_pop(LinkedList_t* ll) {
     return data;
 }
 
-int ll_popAll(LinkedList_t* ll, void** output) {
+int ll_pipeAndRemove(LinkedList_t* ll, void** output) {
     ListNode_t* runner = ll -> head;
     int count = 0;
     while (runner != NULL) {
@@ -88,7 +83,8 @@ int ll_popAll(LinkedList_t* ll, void** output) {
         runner = runner -> next;
         free(temp);
     }
-    resetLinkedList(ll);
+    ll -> head = ll -> tail = NULL;
+    ll -> size = 0;
     return count;
 }
 

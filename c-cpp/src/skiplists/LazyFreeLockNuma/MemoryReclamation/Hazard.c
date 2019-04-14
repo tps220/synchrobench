@@ -52,7 +52,7 @@ void scan(LinkedList_t* retiredList, void (*reclaimMemory)(void*, int), int zone
     //Compare retired candidates against active hazard nodes, reclaiming or procastinating
     int listSize = retiredList -> size;
     void** tmpList = (void**)malloc(listSize * sizeof(void*));
-    ll_popAll(retiredList, tmpList);
+    ll_pipeAndRemove(retiredList, tmpList);
     for (int i = 0; i < listSize; i++) {
         if (findElement(ptrList, tmpList[i])) {
             ll_push(retiredList, tmpList[i]);

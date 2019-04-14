@@ -57,7 +57,7 @@ int removeNode(inode_t *sentinel, int val, int zone, job_queue_t* garbage) {
   }
 
   //if the node contains the targeted value,
-  //remove the node, decrement the data layer references value, and return true
+  //remove the node, signal garbage collection, and return true
   //otherwise return false
   inode_t* candidate = current;
   if (candidate -> val == val) {

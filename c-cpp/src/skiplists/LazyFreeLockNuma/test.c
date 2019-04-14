@@ -42,8 +42,8 @@
 #define DEFAULT_ALTERNATE               0
 #define DEFAULT_EFFECTIVE               1
 #define DEFAULT_UNBALANCED              0
-#define MAX_NUMA_ZONES 					numa_max_node() + 1
-#define MIN_NUMA_ZONES					1
+#define MAX_NUMA_ZONES 									numa_max_node() + 1
+#define MIN_NUMA_ZONES									1
 
 #define XSTR(s)                         STR(s)
 #define STR(s)                          #s
@@ -607,17 +607,18 @@ int main(int argc, char **argv) {
     data[i].hazardNode = hazardNode;
 		data[i].barrier = &barrier;
 		data[i].failures_because_contention = 0;
-    if (i != nb_threads - 1) {
+
+		sl_index++;
+		if (sl_index == numberNumaZones) {
+			sl_index = 0;
+		}
+		if (i != nb_threads - 1) {
       hazardNode -> next = constructHazardNode(sl_index);
       hazardNode = hazardNode -> next;
     }
 		if (pthread_create(&threads[i], &attr, test, (void *)(&data[i])) != 0) {
 			fprintf(stderr, "Error creating thread\n");
 			exit(1);
-		}
-		sl_index++;
-		if (sl_index == numberNumaZones) {
-			sl_index = 0;
 		}
 	}
 

@@ -8,7 +8,7 @@
 typedef struct searchLayer {
 	inode_t* sentinel;
 	pthread_t updater;
-  	pthread_t reclaimer;
+  pthread_t reclaimer;
 	int numaZone;
 	job_queue_t* updates;
 	job_queue_t* garbage;

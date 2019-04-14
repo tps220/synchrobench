@@ -2,8 +2,6 @@
 #define LINKED_LIST_H
 
 #include "stdlib.h"
-#define TRUE 1
-#define FALSE 0
 
 typedef struct ListNode {
     void* data;
@@ -20,11 +18,10 @@ typedef struct LinkedList {
 } LinkedList_t;
 
 LinkedList_t* constructLinkedList();
-void resetLinkedList(LinkedList_t* ll);
 void destructLinkedList(LinkedList_t* ll);
 int findElement(LinkedList_t* ll, void* node);
 void ll_push(LinkedList_t* ll, void* ptr);
 void* ll_pop(LinkedList_t* ll);
-int ll_popAll(LinkedList_t* ll, void** output);
+int ll_pipeAndRemove(LinkedList_t* ll, void** output);
 
 #endif
