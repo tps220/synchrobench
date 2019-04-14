@@ -32,7 +32,7 @@ void sl_destruct(node_t* sentinel) {
 	while (runner != NULL) {
 		node_t* temp = runner;
 		runner = runner -> next;
-		free(runner);
+		free(temp);
 	}
 }
 

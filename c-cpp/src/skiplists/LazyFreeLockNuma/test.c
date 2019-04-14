@@ -512,6 +512,7 @@ int main(int argc, char **argv) {
 	for (int i = 0; i < numberNumaZones; ++i) {
 		pthread_join(thds[i], NULL);
 	}
+	free(thds);
 	printf("Initialized search layers\n");
 
 	//Initialize Hazard Nodes
@@ -713,9 +714,12 @@ int main(int argc, char **argv) {
 		removes += data[i].nb_removed;
 		effupds += data[i].nb_removed + data[i].nb_added;
 		size += data[i].nb_added - data[i].nb_removed;
-		if (max_retries < data[i].max_retries)
+		if (max_retries < data[i].max_retries) {
 			max_retries = data[i].max_retries;
+		}
 	}
+	free(threads);
+	free(data);
 
 	printf("Set size      : %d (expected: %d)\n", sl_size(head), size);
 //	printf("Size (w/ del) : %d\n", data_layer_size(sentinel_node, 0));
@@ -754,14 +758,14 @@ int main(int argc, char **argv) {
 	// Stop background threads and destruct
 	test_complete = 1;
 	stopDataLayer();
-	for(int i = 0; i < numberNumaZones; i++) {
-		printf("finished %d\n", i);
+	for (int i = 0; i < numberNumaZones; i++) {
 		destructSearchLayer(numaLayers[i]);
 		destructAllocator(allocators[i]);
 	}
+	free(numaLayers);
+	free(allocators);
 	sl_destruct(head);
 	destructHazardContainer(memoryLedger);
-
 	// Cleanup STM
 	//TM_SHUTDOWN();
 

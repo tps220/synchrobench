@@ -15,7 +15,6 @@ void destructListNode(ListNode_t* node) {
     free(node);
 }
 
-
 LinkedList_t* constructLinkedList() {
     LinkedList_t* ll = (LinkedList_t*)malloc(sizeof(LinkedList_t));
     ll -> head = ll -> tail = NULL;

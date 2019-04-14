@@ -23,7 +23,7 @@ void destructJobQueue(job_queue_t* jobs) {
 	while (runner != NULL) {
 		q_node_t* temp = runner;
 		runner = runner -> next;
-		free(runner);
+		free(temp);
 	}
 	free(jobs);
 }

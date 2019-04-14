@@ -13,8 +13,8 @@ HazardNode_t* constructHazardNode(int zone) {
     return node;
 }
 
-void destructHazardNode(HazardNode_t* node) {
-  free(node);
+void destructHazardNode(HazardNode_t* node, int zone) {
+  nfree(allocators[zone], node, sizeof(HazardNode_t));
 }
 
 HazardContainer_t* constructHazardContainer(HazardNode_t* head, int H) {
@@ -25,23 +25,17 @@ HazardContainer_t* constructHazardContainer(HazardNode_t* head, int H) {
 }
 
 void destructHazardContainer(HazardContainer_t* container) {
-  HazardNode_t* runner = container -> head;
-  while (runner != NULL) {
-    HazardNode_t* temp = runner;
-    runner = runner -> next;
-    destructHazardNode(temp);
-  }
   free(container);
 }
 
-void retireElement(LinkedList_t* retiredList, void* ptr, void (*reclaimMemory)(void*)) {
+void retireElement(LinkedList_t* retiredList, void* ptr, int zone, void (*reclaimMemory)(void*, int)) {
     ll_push(retiredList, ptr);
     if (retiredList -> size >= MAX_DEPTH) {
-      scan(retiredList, reclaimMemory);
+      scan(retiredList, reclaimMemory, zone);
     }
 }
 
-void scan(LinkedList_t* retiredList, void (*reclaimMemory)(void*)) {
+void scan(LinkedList_t* retiredList, void (*reclaimMemory)(void*, int), int zone) {
     //Collect all valid hazard pointers across application threads
     LinkedList_t* ptrList = constructLinkedList();
     HazardNode_t* runner = memoryLedger -> head;
@@ -64,19 +58,19 @@ void scan(LinkedList_t* retiredList, void (*reclaimMemory)(void*)) {
             ll_push(retiredList, tmpList[i]);
         }
         else {
-            reclaimMemory(tmpList[i]);
+            reclaimMemory(tmpList[i], zone);
         }
     }
     free(tmpList);
 }
 
-void reclaimIndexNode(void* ptr) {
+void reclaimIndexNode(void* ptr, int zone) {
     inode_t* node = (inode_t*)ptr;
     FAD(&node -> dataLayer -> references);
-    free(node);
+    destructIndexNode(node, zone);
 }
 
-void reclaimDataLayerNode(void* ptr) {
+void reclaimDataLayerNode(void* ptr, int zone) {
     free(ptr);
 }
 

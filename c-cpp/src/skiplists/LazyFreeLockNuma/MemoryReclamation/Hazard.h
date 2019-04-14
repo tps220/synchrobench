@@ -16,7 +16,7 @@ typedef struct HazardNode {
 } HazardNode_t;
 
 HazardNode_t* constructHazardNode(int zone);
-void destructHazardNode(HazardNode_t* node);
+void destructHazardNode(HazardNode_t* node, int zone);
 
 typedef struct HazardContainer {
     HazardNode_t* head;
@@ -28,12 +28,12 @@ void destructHazardContainer(HazardContainer_t* container);
 
 extern HazardContainer_t* memoryLedger;
 
-void retireElement(LinkedList_t* hazardNode, void* ptr, void (*reclaimMemory)(void*));
-void scan(LinkedList_t* hazardNode, void (*reclaimMemory)(void*));
-void reclaimIndexNode(void* ptr);
-void reclaimDataLayerNode(void* ptr);
+void retireElement(LinkedList_t* hazardNode, void* ptr, int zone, void (*reclaimMemory)(void*, int));
+void scan(LinkedList_t* hazardNode, void (*reclaimMemory)(void*, int), int zone);
+void reclaimIndexNode(void* ptr, int zone);
+void reclaimDataLayerNode(void* ptr, int zone);
 
-#define RETIRE_INDEX_NODE(retiredList, ptr) retireElement((retiredList), (ptr), reclaimIndexNode)
-#define RETIRE_NODE(retiredList, ptr) retireElement((retiredList), (ptr), reclaimDataLayerNode)
+#define RETIRE_INDEX_NODE(retiredList, ptr, zone) retireElement((retiredList), (ptr), (zone), reclaimIndexNode)
+#define RETIRE_NODE(retiredList, ptr) retireElement((retiredList), (ptr), 0, reclaimDataLayerNode)
 
 #endif

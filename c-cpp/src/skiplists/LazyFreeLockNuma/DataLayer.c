@@ -9,6 +9,8 @@
 #include <assert.h>
 #include <unistd.h>
 
+#include <stdio.h>
+
 dataLayerThread_t *remover = NULL;
 pthread_t reclaimer;
 volatile char stopGarbageCollection;
@@ -70,7 +72,7 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
 	while (retry) {
 		node_t* previous = getElement(numask -> sentinel, val, hazardNode);
     hazardNode -> hp1 = previous -> next;
-		node_t* current = (node_t*)previous -> next;
+		node_t* current = (node_t*)hazardNode -> hp1;
 		while (current -> val < val) {
       hazardNode -> hp0 = current;
 			previous = (node_t*)hazardNode -> hp0;
@@ -111,7 +113,7 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) { //TOD
 	while (retry) {
 		node_t* previous = getElement(numask -> sentinel, val, hazardNode);
     hazardNode -> hp1 = previous -> next;
-		node_t* current = (node_t*)previous -> next;
+		node_t* current = (node_t*)hazardNode -> hp1;
 		while (current -> val < val) {
       hazardNode -> hp0 = current;
 			previous = (node_t*)hazardNode -> hp0;
@@ -124,6 +126,8 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) { //TOD
     hazardNode -> hp1 = NULL;
 		if (validateLink(previous, current)) {
 			if (current -> val != val || current -> markedToDelete) {
+				pthread_mutex_unlock(&previous -> lock);
+				pthread_mutex_unlock(&current -> lock);
 				return 0;
 			}
 			current -> markedToDelete = 1;
@@ -185,6 +189,10 @@ static dataLayerThread_t* constructDataLayerThread() {
 	return thread;
 }
 
+static dataLayerThread_t* destructDataLayerThread(dataLayerThread_t* thread) {
+	free(thread);
+}
+
 void startDataLayer(node_t* sentinel) {
 	if (remover == NULL) {
 		remover = constructDataLayerThread();
@@ -206,6 +214,7 @@ void stopDataLayer() {
 		stopGarbageCollection = 1;
 		pthread_join(reclaimer, NULL);
 		remover -> running = 0;
+		destructDataLayerThread(remover);
 	}
 }
 
@@ -213,6 +222,7 @@ inline void collectGarbage(job_queue_t* garbage, LinkedList_t* retiredList) {
   q_node_t* job;
   while ((job = pop(garbage)) != NULL) {
     RETIRE_NODE(retiredList, job -> node);
+    free(job);
   }
 }
 
