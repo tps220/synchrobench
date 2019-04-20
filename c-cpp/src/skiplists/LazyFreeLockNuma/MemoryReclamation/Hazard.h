@@ -5,6 +5,7 @@
 #include "LinkedList.h"
 
 extern numa_allocator_t** allocators;
+#define MAX_DEPTH 5
 
 typedef struct HazardNode {
     void* hp0;
