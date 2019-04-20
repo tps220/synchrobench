@@ -26,12 +26,6 @@ inode_t* constructLinkedIndexNode(int val, int topLevel,node_t* dataLayer, int z
 	return node;
 }
 
-void destructIndexNode(inode_t* node, int zone) {
-	numa_allocator_t* allocator = allocators[zone];
-	nfree(allocator, node -> next, node -> topLevel * sizeof(inode_t*));
-	nfree(allocator, node, sizeof(inode_t));
-}
-
 //constructor that initializes the data fields of the data layer node, 
 //but does not link it to another node
 node_t* constructNode(int val, int initialReferences) {

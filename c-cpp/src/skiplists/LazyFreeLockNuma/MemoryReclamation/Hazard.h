@@ -4,10 +4,7 @@
 #define HAZARD_H
 
 #include "LinkedList.h"
-#include "Allocator.h"
-
 #define MAX_DEPTH 5
-extern numa_allocator_t** allocators;
 
 typedef struct HazardNode {
     void* hp0;
@@ -15,25 +12,23 @@ typedef struct HazardNode {
     struct HazardNode* next;
 } HazardNode_t;
 
-HazardNode_t* constructHazardNode(int zone);
-void destructHazardNode(HazardNode_t* node, int zone);
+HazardNode_t* constructHazardNode();
 
 typedef struct HazardContainer {
     HazardNode_t* head;
     int H;
 } HazardContainer_t;
 
-HazardContainer_t* constructHazardContainer(HazardNode_t* head, int H);
-void destructHazardContainer(HazardContainer_t* container);
+HazardContainer_t* constructHazardContainer();
 
 extern HazardContainer_t* memoryLedger;
 
-void retireElement(LinkedList_t* hazardNode, void* ptr, int zone, void (*reclaimMemory)(void*, int));
-void scan(LinkedList_t* hazardNode, void (*reclaimMemory)(void*, int), int zone);
-void reclaimIndexNode(void* ptr, int zone);
-void reclaimDataLayerNode(void* ptr, int zone);
+void retireElement(HazardNode_t* hazardNode, void* ptr, void (*reclaimMemory)(void*));
+void scan(HazardNode_t* hazardNode, void (*reclaimMemory)(void*));
+void reclaimIndexNode(void* ptr);
+void reclaimDataLayerNode(void* ptr);
 
-#define RETIRE_INDEX_NODE(retiredList, ptr, zone) retireElement((retiredList), (ptr), (zone), reclaimIndexNode)
-#define RETIRE_NODE(retiredList, ptr) retireElement((retiredList), (ptr), 0, reclaimDataLayerNode)
+#define RETIRE_INDEX_NODE(retiredList, ptr) retireElement((retiredList), (ptr), reclaimIndexNode)
+#define RETIRE_NODE(retiredList, ptr) retireElement((retiredList), (ptr), reclaimDataLayerNode)
 
 #endif

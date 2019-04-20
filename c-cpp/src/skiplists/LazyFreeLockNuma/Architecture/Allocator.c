@@ -22,7 +22,7 @@ numa_allocator_t* constructAllocator(unsigned ssize) {
 	return allocator;
 }
 
-void destructAllocator(numa_allocator_t* allocator) {
+void destructAllocator(numa_allocator_t* allocator, unsigned ssize) {
 	nreset(allocator);
 	free(allocator);
 }

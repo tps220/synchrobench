@@ -3,7 +3,7 @@
 
 #include "JobQueue.h"
 
-q_node_t* constructQNode(int val, Job operation, void* node) {
+q_node_t* constructQNode(int val, Job operation, node_t* node) {
 	q_node_t* new_job = (q_node_t*)malloc(sizeof(q_node_t));
 	new_job -> val = val;
 	new_job -> operation = operation;
@@ -23,12 +23,11 @@ void destructJobQueue(job_queue_t* jobs) {
 	while (runner != NULL) {
 		q_node_t* temp = runner;
 		runner = runner -> next;
-		free(temp);
+		free(runner);
 	}
-	free(jobs);
 }
 
-void push(job_queue_t* jobs, int val, Job operation, void* node) {
+void push(job_queue_t* jobs, int val, Job operation, node_t* node) {
 	q_node_t* new_job = constructQNode(val, operation, node);
 	jobs -> tail -> next = new_job;
 	jobs -> tail = new_job;
