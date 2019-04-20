@@ -41,6 +41,7 @@ typedef struct numa_allocator {
   unsigned  num_buffers;
   //for half cache line alignment
   char    last_alloc_half;
+  pthread_mutex_t lock;
 } numa_allocator_t;
 
 //constructors and destructors
