@@ -23,7 +23,7 @@ void destructJobQueue(job_queue_t* jobs) {
   while (runner != NULL) {
     q_node_t* temp = runner;
     runner = runner -> next;
-    free(runner);
+    free(temp);
   }
 }
 
@@ -40,8 +40,8 @@ q_node_t* pop(job_queue_t* jobs) {
   q_node_t* front = jobs -> head;
   jobs -> head = jobs -> head -> next;
   front -> val = jobs -> head -> val;
-    front -> operation = jobs -> head -> operation;
-    front -> node = jobs -> head -> node;
+  front -> operation = jobs -> head -> operation;
+  front -> node = jobs -> head -> node;
   return front;
 }
 
