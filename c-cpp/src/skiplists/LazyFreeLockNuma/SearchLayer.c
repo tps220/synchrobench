@@ -75,6 +75,7 @@ void stopIndexLayer(searchLayer_t* numask) {
 void* updateNumaZone(void* args) {
   searchLayer_t* numask = (searchLayer_t*)args;
   job_queue_t* updates = numask -> updates;
+  memory_queue_t* gc = numask -> garbage;
   inode_t* sentinel = numask -> sentinel;
   const int numaZone = numask -> numaZone;
 
@@ -86,13 +87,13 @@ void* updateNumaZone(void* args) {
 
   while (numask -> finished == 0) {
     usleep(numask -> sleep_time);
-    while (numask -> finished == 0 && runJob(sentinel, pop(updates), numask -> numaZone)) {}
+    while (numask -> finished == 0 && runJob(sentinel, pop(updates), numaZone, gc)) {}
   }
 
   return NULL;
 }
 
-int runJob(inode_t* sentinel, q_node_t* job, int zone) {
+int runJob(inode_t* sentinel, q_node_t* job, int zone, memory_queue_t* gc) {
   if (job == NULL) {
     return 0;
   }
@@ -100,7 +101,7 @@ int runJob(inode_t* sentinel, q_node_t* job, int zone) {
     add(sentinel, job -> val, job -> node, zone);
   }
   else if (job -> operation == REMOVAL) {
-    removeNode(sentinel, job -> val, zone);
+    removeNode(sentinel, job -> val, zone, gc);
   }
   return 1;
 }

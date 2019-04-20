@@ -37,7 +37,7 @@ int add(inode_t *sentinel, int val, node_t* dataLayer, int zone) {
 }
 
 //removes a value in the skip list when present
-int removeNode(inode_t *sentinel, int val, int zone) {
+int removeNode(inode_t *sentinel, int val, int zone, memory_queue_t* gc) {
   //store the result of a traversal through the skip list while searching for a value
   inode_t *predecessors[sentinel -> topLevel], *successors[sentinel -> topLevel];
   inode_t *previous = sentinel, *current = NULL;
@@ -61,8 +61,7 @@ int removeNode(inode_t *sentinel, int val, int zone) {
     for (int i = 0; i < candidate -> topLevel; i++) {
         predecessors[i] -> next[i] = successors[i] -> next[i];
     }
-    FAD(&candidate -> dataLayer -> references); // Question: is this correct?
-    //candidate -> dataLayer = NULL; //QUESTION: will this be a problem and is it needed?
+    mq_push(gc, candidate);
     return 1;
   }
   return 0;

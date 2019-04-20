@@ -27,7 +27,7 @@ void startIndexLayer(searchLayer_t* numask, int sleep_time);
 void stopIndexLayer(searchLayer_t* numask);
 
 //helper functions
-int runJob(inode_t* sentinel, q_node_t* job, int zone);
+int runJob(inode_t* sentinel, q_node_t* job, int zone, memory_queue_t* gc);
 void* updateNumaZone(void* args);
 void* garbageCollectionIndexLayer(void* args);
 
