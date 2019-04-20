@@ -4,17 +4,17 @@
 #include "stdlib.h"
 
 typedef struct ListNode {
-    void* data;
-    struct ListNode* next;
+  void* data;
+  struct ListNode* next;
 } ListNode_t;
 
 ListNode_t* constructListNode(void* ptr);
 void destructListNode(ListNode_t* node);
 
 typedef struct LinkedList {
-    ListNode_t* head;
-    ListNode_t* tail;
-    int size;
+  ListNode_t* head;
+  ListNode_t* tail;
+  int size;
 } LinkedList_t;
 
 LinkedList_t* constructLinkedList();
