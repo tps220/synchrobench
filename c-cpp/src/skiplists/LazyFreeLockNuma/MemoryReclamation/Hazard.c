@@ -25,4 +25,53 @@ void destructHazardContainer(HazardContainer_t* container) {
   free(container);
 }
 
+
+void retireElement(LinkedList_t* retiredList, void* ptr, void (*reclaimMemory)(void*, int), int zone) {
+  ll_push(retiredList, ptr);
+  if (retiredList -> size >= MAX_DEPTH) {
+    scan(retiredList, reclaimMemory, zone);
+  }
+}
+
+void scan(LinkedList_t* retiredList, void (*reclaimMemory)(void*, int), int zone) {
+  //Collect all valid hazard pointers across application threads
+  LinkedList_t* ptrList = constructLinkedList();
+  HazardNode_t* runner = memoryLedger -> head;
+  while (runner != NULL) {
+    if (runner -> hp0 != NULL) {
+      ll_push(ptrList, runner -> hp0);
+    }
+    if (runner -> hp1 != NULL) {
+      ll_push(ptrList, runner -> hp1);
+    }
+    runner = runner -> next;
+  }
+
+  //Compare retired candidates against active hazard nodes, reclaiming or procastinating
+  int listSize = retiredList -> size;
+  void** tmpList = (void**)malloc(listSize * sizeof(void*));
+  ll_pipeAndRemove(retiredList, tmpList);
+  for (int i = 0; i < listSize; i++) {
+    if (findElement(ptrList, tmpList[i])) {
+      ll_push(retiredList, tmpList[i]);
+    }
+    else {
+      reclaimMemory(tmpList[i], zone);
+    }
+  }
+  free(tmpList);
+}
+
+void reclaimIndexNode(void* ptr, int zone) {
+  /*
+    inode_t* node = (inode_t*)ptr;
+    FAD(&node -> dataLayer -> references);
+    destructIndexNode(node, zone);
+  */
+}
+
+void reclaimDataLayerNode(void* ptr, int zone) {
+    //free(ptr);
+}
+
 #endif
