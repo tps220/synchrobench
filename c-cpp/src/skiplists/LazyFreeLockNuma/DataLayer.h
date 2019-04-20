@@ -17,9 +17,9 @@ typedef struct dataLayerThread_t {
 
 
 //Driver Functions
-int lazyFind(searchLayer_t* numask, int val);
-int lazyAdd(searchLayer_t* numask, int val);
-int lazyRemove(searchLayer_t* numask, int val);
+int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode);
+int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode);
+int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode);
 
 //Background functions
 void* backgroundRemoval(void* input);

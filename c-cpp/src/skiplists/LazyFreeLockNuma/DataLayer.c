@@ -10,12 +10,12 @@
 dataLayerThread_t *remover = NULL;
 
 //Helper Functions
-inline node_t* getElement(inode_t* sentinel, const int val);
+inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode);
 inline void dispatchSignal(int val, node_t* dataLayer, Job operation);
 inline int validateLink(node_t* previous, node_t* current);
 inline int validateRemoval(node_t* previous, node_t* current);
 
-inline node_t* getElement(inode_t* sentinel, const int val) {
+inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode) {
   inode_t *previous = sentinel, *current = NULL;
   for (int i = previous -> topLevel - 1; i >= 0; i--) {
     current = previous -> next[i];
@@ -42,18 +42,18 @@ inline int validateRemoval(node_t* previous, node_t* current) {
   return previous -> next == current && current -> markedToDelete;
 }
 
-int lazyFind(searchLayer_t* numask, int val) {
-  node_t* current = getElement(numask -> sentinel, val);
+int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
+  node_t* current = getElement(numask -> sentinel, val, hazardNode);
   while (current -> val < val) {
     current = current -> next;
   }
   return current -> val == val && current -> markedToDelete == 0;
 }
 
-int lazyAdd(searchLayer_t* numask, int val) {
+int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
   char retry = 1;
   while (retry) {
-    node_t* previous = getElement(numask -> sentinel, val);
+    node_t* previous = getElement(numask -> sentinel, val, hazardNode);
     node_t* current = previous -> next;
     while (current -> val < val) {
       previous = current;
@@ -86,10 +86,10 @@ int lazyAdd(searchLayer_t* numask, int val) {
   }
 }
 
-int lazyRemove(searchLayer_t* numask, int val) {
+int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
   char retry = 1;
   while (retry) {
-    node_t* previous = getElement(numask -> sentinel, val);
+    node_t* previous = getElement(numask -> sentinel, val, hazardNode);
     node_t* current = previous -> next;
     while (current -> val < val) {
       previous = current;

@@ -225,7 +225,7 @@ void* test(void *data) {
       if (last < 0) { // add
 
         val = rand_range_re(&d->seed, d->range);
-        if (sl_add(sl, val)) {
+        if (sl_add(sl, val, hazardNode)) {
           d->nb_added++;
           last = val;
         }
@@ -233,7 +233,7 @@ void* test(void *data) {
 
       } else { // remove
         if (d->alternate) { // alternate mode (default)
-          if (sl_remove(sl, last)) {
+          if (sl_remove(sl, last, hazardNode)) {
             d->nb_removed++;
           }
           last = -1;
@@ -241,7 +241,7 @@ void* test(void *data) {
           /* Random computation only in non-alternated cases */
           val = rand_range_re(&d->seed, d->range);
           /* Remove one random value */
-          if (sl_remove(sl, val)) {
+          if (sl_remove(sl, val, hazardNode)) {
             d->nb_removed++;
             /* Repeat until successful, to avoid size variations */
             last = -1;
@@ -272,7 +272,7 @@ void* test(void *data) {
         val = rand_range_re(&d->seed, d->range);
       }
 
-      if (sl_contains(sl, val))
+      if (sl_contains(sl, val, hazardNode))
         d->nb_found++;
       d->nb_contains++;
 
@@ -558,7 +558,7 @@ int main(int argc, char **argv)
     } else {
             val = rand_range_re(&global_seed, range);
     }
-    if (sl_add(numaLayers[cur_zone], val)) {
+    if (sl_add(numaLayers[cur_zone], val, hazardNode)) {
       last = val;
       i++;
       if(i % (initial / 4) == 0 && cur_zone != numberNumaZones - 1) {
