@@ -64,9 +64,9 @@ int lazyAdd(searchLayer_t* numask, int val) {
     if (validateLink(previous, current)) {
       if (current -> val == val && current -> markedToDelete) {
         current -> markedToDelete = 0;
-				current -> fresh = 1;
+        current -> fresh = 1;
         pthread_mutex_unlock(&previous -> lock);
-				pthread_mutex_unlock(&current -> lock);
+        pthread_mutex_unlock(&current -> lock);
         return 1;
       }
       else if (current -> val == val) {
@@ -88,7 +88,7 @@ int lazyAdd(searchLayer_t* numask, int val) {
 
 int lazyRemove(searchLayer_t* numask, int val) {
   char retry = 1;
-	while (retry) {
+  while (retry) {
     node_t* previous = getElement(numask -> sentinel, val);
     node_t* current = previous -> next;
     while (current -> val < val) {
@@ -96,21 +96,21 @@ int lazyRemove(searchLayer_t* numask, int val) {
       current = current -> next;
     }
     pthread_mutex_lock(&previous -> lock);
-	  pthread_mutex_lock(&current -> lock);
-	  if (validateLink(previous, current)) {
+    pthread_mutex_lock(&current -> lock);
+    if (validateLink(previous, current)) {
       if (current -> val != val || current -> markedToDelete) {
-	      pthread_mutex_unlock(&previous -> lock);
+        pthread_mutex_unlock(&previous -> lock);
         pthread_mutex_unlock(&current -> lock);
         return 0;
       }
       current -> markedToDelete = 1;
-		  current -> fresh = 1;
-		  pthread_mutex_unlock(&previous -> lock);
-		  pthread_mutex_unlock(&current -> lock);
-		  return 1;
+      current -> fresh = 1;
+      pthread_mutex_unlock(&previous -> lock);
+      pthread_mutex_unlock(&current -> lock);
+      return 1;
     }
-	  pthread_mutex_unlock(&previous -> lock);
-	  pthread_mutex_unlock(&current -> lock);
+    pthread_mutex_unlock(&previous -> lock);
+    pthread_mutex_unlock(&current -> lock);
   }
 }
 
