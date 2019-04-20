@@ -16,7 +16,7 @@
 #include <numa.h>
 #include <sched.h>
 
-inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList);
+inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList, int zone);
 
 searchLayer_t* constructSearchLayer(inode_t* sentinel, int zone) {
   searchLayer_t* numask = (searchLayer_t*)malloc(sizeof(searchLayer_t));
@@ -31,8 +31,9 @@ searchLayer_t* constructSearchLayer(inode_t* sentinel, int zone) {
 }
 
 searchLayer_t* destructSearchLayer(searchLayer_t* numask) {
-  stop(numask);
+  stopIndexLayer(numask);
   destructJobQueue(numask -> updates);
+  destructMemoryQueue(numask -> garbage);
   free(numask);
 }
 
@@ -120,15 +121,15 @@ void* garbageCollectionIndexLayer(void* args) {
 
   while (numask -> stopGarbageCollection == 0) {
     usleep(numask -> sleep_time);
-    collect(garbage, retiredList);
+    collect(garbage, retiredList, numaZone);
   }
-  collect(garbage, retiredList);
+  collect(garbage, retiredList, numaZone);
 }
 
-inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList) {
+inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList, int zone) {
   m_node_t* subscriber;
   while ((subscriber = mq_pop(garbage)) != NULL) {
-    RETIRE_INDEX_NODE(retiredList, subscriber -> node);
+    RETIRE_INDEX_NODE(retiredList, subscriber -> node, zone);
     //free(subscriber);
   }
 }
