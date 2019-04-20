@@ -34,6 +34,7 @@ typedef struct inode {
 
 inode_t* constructIndexNode(int val, int topLevel, node_t* dataLayer, int zone);
 inode_t* constructLinkedIndexNode(int val, int topLevel, node_t* dataLayer, int zone, inode_t* next);
+void destructIndexNode(inode_t* node, int zone);
 
 //Helper Methods
 int floor_log_2(unsigned int n);

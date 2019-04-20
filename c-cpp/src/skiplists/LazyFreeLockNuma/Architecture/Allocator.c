@@ -82,6 +82,7 @@ void nfree(numa_allocator_t* allocator, void *ptr, unsigned ssize) {
 }
 
 static void nreset(numa_allocator_t* allocator) {
+  pthread_mutex_lock(&allocator -> lock);
   if (!allocator -> empty) {
     allocator -> empty = 1;
     //free other_buffers, if used
@@ -96,6 +97,7 @@ static void nreset(numa_allocator_t* allocator) {
     //free primary buffer
     numa_free(allocator -> buf_start, allocator -> buf_size);
   }
+  pthread_mutex_unlock(&allocator -> lock);
 }
 
 static void nrealloc(numa_allocator_t* allocator) {

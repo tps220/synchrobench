@@ -26,6 +26,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <pthread.h>
 
 #define CACHE_LINE_SIZE 64
 

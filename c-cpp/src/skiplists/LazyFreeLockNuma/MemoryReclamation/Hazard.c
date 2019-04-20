@@ -63,15 +63,13 @@ void scan(LinkedList_t* retiredList, void (*reclaimMemory)(void*, int), int zone
 }
 
 void reclaimIndexNode(void* ptr, int zone) {
-  /*
-    inode_t* node = (inode_t*)ptr;
-    FAD(&node -> dataLayer -> references);
-    destructIndexNode(node, zone);
-  */
+  inode_t* node = (inode_t*)ptr;
+  FAD(&node -> dataLayer -> references);
+  destructIndexNode(node, zone);
 }
 
 void reclaimDataLayerNode(void* ptr, int zone) {
-    //free(ptr);
+  //free(ptr);
 }
 
 #endif
