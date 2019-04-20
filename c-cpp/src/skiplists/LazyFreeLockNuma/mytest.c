@@ -1,6 +1,6 @@
-/* 
+/*
  * mytest.c: preliminary testing, written by Thomas Salemy, November 2018
- * 
+ *
  */
 
 //NUMA Skip List Package
@@ -33,7 +33,7 @@ extern searchLayer_t** numaLayers;
 extern numa_allocator_t** allocators;
 extern int numberNumaZones;
 extern unsigned int levelmax;
-extern dataLayerThread_t* remover; 
+extern dataLayerThread_t* remover;
 typedef struct zone_init_args {
   int     numa_zone;
   node_t*   head;

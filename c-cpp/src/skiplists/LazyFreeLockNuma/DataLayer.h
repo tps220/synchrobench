@@ -5,14 +5,14 @@
 #include "Nodes.h"
 #include "JobQueue.h"
 
-extern searchLayer_t** numaLayers; 
+extern searchLayer_t** numaLayers;
 extern int numberNumaZones;
 typedef struct dataLayerThread_t {
-	pthread_t runner;
-	volatile char running;
-	volatile char finished;
-	int sleep_time;
-	node_t* sentinel;
+  pthread_t runner;
+  volatile char running;
+  volatile char finished;
+  int sleep_time;
+  node_t* sentinel;
 } dataLayerThread_t;
 
 

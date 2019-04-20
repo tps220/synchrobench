@@ -6,13 +6,13 @@
 #include <pthread.h>
 
 typedef struct searchLayer {
-	inode_t* sentinel;
-	pthread_t helper;
-	int numaZone;
-	job_queue_t* updates;
-	volatile char finished;
-	volatile char running;
-	int sleep_time;
+  inode_t* sentinel;
+  pthread_t helper;
+  int numaZone;
+  job_queue_t* updates;
+  volatile char finished;
+  volatile char running;
+  int sleep_time;
 } searchLayer_t;
 
 //driver functions

@@ -53,7 +53,7 @@ int removeNode(inode_t *sentinel, int val, int zone) {
     successors[i] = current;
   }
 
-  //if the node contains the targeted value, 
+  //if the node contains the targeted value,
   //remove the node, decrement the data layer references value, and return true
   //otherwise return false
   inode_t* candidate = current;

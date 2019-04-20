@@ -1,5 +1,5 @@
 #ifndef ATOMIC_H
-#define ATOMIC_H 
+#define ATOMIC_H
 
 #include <atomic_ops.h>
 
