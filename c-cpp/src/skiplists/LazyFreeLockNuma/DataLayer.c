@@ -192,7 +192,7 @@ void startDataLayerThread(node_t* sentinel) {
   }
   if (remover -> running == 0) {
     stopGarbageCollection = 0;
-    pthread_create(&reclaimer, NULL, garbageCollectionDataLayer);
+    pthread_create(&reclaimer, NULL, garbageCollectDataLayer, NULL);
 
     remover -> finished = 0;
     remover -> sentinel = sentinel;
@@ -212,7 +212,7 @@ void stopDataLayerThread() {
   }
 }
 
-void* garbageCollectionDataLayer(void* args) {
+void* garbageCollectDataLayer(void* args) {
   retiredList = constructLinkedList();
   garbage = constructMemoryQueue();
 
