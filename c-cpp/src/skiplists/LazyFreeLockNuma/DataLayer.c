@@ -7,7 +7,15 @@
 #include <assert.h>
 #include <unistd.h>
 
+//Update helper
 dataLayerThread_t *remover = NULL;
+
+//Gargabe Collection helper
+pthread_t reclaimer;
+volatile char stopGarbageCollection;
+memory_queue_t* garbage;
+LinkedList_t* retiredList;
+inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList);
 
 //Helper Functions
 inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode);
@@ -183,10 +191,13 @@ void startDataLayerThread(node_t* sentinel) {
     remover = constructDataLayerThread();
   }
   if (remover -> running == 0) {
-    remover -> running = 1;
+    stopGarbageCollection = 0;
+    pthread_create(&reclaimer, NULL, garbageCollectionDataLayer);
+
     remover -> finished = 0;
     remover -> sentinel = sentinel;
     pthread_create(&remover -> runner, NULL, backgroundRemoval, (void*)remover);
+    remover -> running = 1;
   }
 }
 
@@ -195,7 +206,28 @@ void stopDataLayerThread() {
     remover -> finished = 1;
     pthread_join(remover -> runner, NULL);
     remover -> running = 0;
+
+    stopGarbageCollection = 1;
+    pthread_join(reclaimer, NULL);
   }
 }
 
+void* garbageCollectionDataLayer(void* args) {
+  retiredList = constructLinkedList();
+  garbage = constructMemoryQueue();
+
+  while (stopGarbageCollection == 0) {
+    usleep(1000);
+    collect(garbage, retiredList);
+  }
+  collect(garbage, retiredList);
+}
+
+inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList) {
+  m_node_t* subscriber;
+  while ((subscriber = mq_pop(garbage)) != NULL) {
+    RETIRE_NODE(retiredList, subscriber -> node);
+    //free(subscriber);
+  }
+}
 #endif

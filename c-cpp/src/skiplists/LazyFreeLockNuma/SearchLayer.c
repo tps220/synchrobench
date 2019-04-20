@@ -135,5 +135,4 @@ inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList, int zone
   }
 }
 
-
 #endif
