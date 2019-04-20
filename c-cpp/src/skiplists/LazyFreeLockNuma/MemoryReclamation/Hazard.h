@@ -30,7 +30,7 @@ void scan(LinkedList_t* hazardNode, void (*reclaimMemory)(void*, int), int zone)
 void reclaimIndexNode(void* ptr, int zone);
 void reclaimDataLayerNode(void* ptr, int zone);
 
-#define RETIRE_INDEX_NODE(retiredList, ptr, zone) retireElement((retiredList), (ptr), (zone), reclaimIndexNode)
-#define RETIRE_NODE(retiredList, ptr) retireElement((retiredList), (ptr), 0, reclaimDataLayerNode)
+#define RETIRE_INDEX_NODE(retiredList, ptr, zone) retireElement((retiredList), (ptr), reclaimIndexNode, (zone))
+#define RETIRE_NODE(retiredList, ptr) retireElement((retiredList), (ptr), reclaimDataLayerNode, 0)
 
 #endif
