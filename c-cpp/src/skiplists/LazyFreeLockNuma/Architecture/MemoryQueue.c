@@ -26,13 +26,13 @@ void destructMemoryQueue(memory_queue_t* jobs) {
 	free(jobs);
 }
 
-void push(memory_queue_t* jobs, void* node) {
+void mq_push(memory_queue_t* jobs, void* node) {
 	m_node_t* new_job = constructMNode(node);
 	jobs -> tail -> next = new_job;
 	jobs -> tail = new_job;
 }
 
-m_node_t* pop(memory_queue_t* jobs) {
+m_node_t* mq_pop(memory_queue_t* jobs) {
 	if (jobs -> head -> next == NULL) {
 		return NULL;
 	}
