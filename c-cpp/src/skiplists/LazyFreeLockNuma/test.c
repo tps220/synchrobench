@@ -98,6 +98,9 @@ void barrier_cross(barrier_t *b)
   pthread_mutex_unlock(&b -> mutex);
 }
 
+//Memory Reclamation Requirements
+extern HazardContainer_t* memoryLedger;
+
 //Numa Skip List Requirements
 extern searchLayer_t** numaLayers;
 extern numa_allocator_t** allocators;
@@ -188,6 +191,7 @@ typedef struct thread_data {
   searchLayer_t* sl;
   barrier_t *barrier;
   unsigned long failures_because_contention;
+  HazardNode_t* hazardNode;
 } thread_data_t;
 
 void* test(void *data) {
@@ -195,6 +199,7 @@ void* test(void *data) {
   unsigned int val = 0;
 
   thread_data_t *d = (thread_data_t *)data;
+  HazardNode_t* hazardNode = d -> hazardNode;
 
   //run test thread on correct NUMA zone
   searchLayer_t* sl = d -> sl;
@@ -512,7 +517,11 @@ int main(int argc, char **argv)
   printf("Initialized search layers\n");
   stop_condition = 0;
 
-        global_seed = rand();
+  //Initialize Hazard Container
+  HazardNode_t* hazardNode = constructHazardNode(0);
+  memoryLedger = constructHazardContainer(hazardNode);
+
+  global_seed = rand();
 #ifdef TLS
   rng_seed = &global_seed;
 #else /* ! TLS */
@@ -524,13 +533,12 @@ int main(int argc, char **argv)
 #endif /* ! TLS */
 
   // Init STM
-  printf("Initializing STM\n");
-
+  //printf("Initializing STM\n");
   //TM_STARTUP();
+
+
   // Populate set
   printf("Adding %d entries to set\n", initial);
-  //i = 0;
-  //initial_populate = 1;
 
   // start data-layer-helper thread
   char test_complete = 0;
@@ -598,14 +606,23 @@ int main(int argc, char **argv)
     data[i].nb_aborts_double_write = 0;
     data[i].max_retries = 0;
     data[i].seed = rand();
-    data[i].sl = numaLayers[sl_index++];
+    data[i].sl = numaLayers[sl_index];
     data[i].barrier = &barrier;
     data[i].failures_because_contention = 0;
+    data[i].hazardNode = hazardNode;
+
+    sl_index++;
+    if (sl_index == numberNumaZones){
+      sl_index = 0;
+    }
+    if (i != nb_threads - 1) {
+      hazardNode -> next = constructHazardNode(sl_index);
+      hazardNode = hazardNode -> next;
+    }
     if (pthread_create(&threads[i], &attr, test, (void *)(&data[i])) != 0) {
       fprintf(stderr, "Error creating thread\n");
       exit(1);
     }
-    if(sl_index == numberNumaZones){ sl_index = 0; }
   }
 
   pthread_attr_destroy(&attr);
