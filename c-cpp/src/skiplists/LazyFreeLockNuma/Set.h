@@ -4,6 +4,7 @@
 #include "DataLayer.h"
 #include "SearchLayer.h"
 #include "Allocator.h"
+#include "Hazard.h"
 
 searchLayer_t** numaLayers;
 numa_allocator_t** allocators;
