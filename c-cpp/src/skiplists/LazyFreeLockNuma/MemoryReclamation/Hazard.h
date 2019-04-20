@@ -2,6 +2,7 @@
 #define HAZARD_H
 
 #include "Allocator.h"
+#include "LinkedList.h"
 
 extern numa_allocator_t** allocators;
 
