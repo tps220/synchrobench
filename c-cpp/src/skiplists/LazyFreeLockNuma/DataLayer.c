@@ -18,10 +18,13 @@ inline int validateRemoval(node_t* previous, node_t* current);
 inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode) {
   inode_t *previous = sentinel, *current = NULL;
   for (int i = previous -> topLevel - 1; i >= 0; i--) {
-    current = previous -> next[i];
+    hazardNode -> hp1 = previous -> next[i];
+    current = (inode_t*)hazardNode -> hp1;
     while (current -> val < val) {
-      previous = current;
-      current = current -> next[i];
+      hazardNode -> hp0 = current;
+      previous = (inode_t*)hazardNode -> hp0 ;
+      hazardNode -> hp1 = current -> next[i];
+      current = (inode_t*)hazardNode -> hp1;
     }
   }
   return previous -> dataLayer;
@@ -45,22 +48,31 @@ inline int validateRemoval(node_t* previous, node_t* current) {
 int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
   node_t* current = getElement(numask -> sentinel, val, hazardNode);
   while (current -> val < val) {
-    current = current -> next;
+    hazardNode -> hp0 = current -> next;
+    current = (node_t*)hazardNode -> hp0;
   }
-  return current -> val == val && current -> markedToDelete == 0;
+  int found = current -> val == val && current -> markedToDelete == 0;
+  hazardNode -> hp0 = NULL;
+  hazardNode -> hp1 = NULL;
+  return found;
 }
 
 int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
   char retry = 1;
   while (retry) {
     node_t* previous = getElement(numask -> sentinel, val, hazardNode);
-    node_t* current = previous -> next;
+    hazardNode -> hp1 = previous -> next;
+    node_t* current = (node_t*)hazardNode -> hp1;
     while (current -> val < val) {
-      previous = current;
-      current = current -> next;
+      hazardNode -> hp0 = current;
+      previous = (node_t*)hazardNode -> hp0;
+      hazardNode -> hp1 = current -> next;
+      current = (node_t*)hazardNode -> hp1;
     }
     pthread_mutex_lock(&previous -> lock);
     pthread_mutex_lock(&current -> lock);
+    hazardNode -> hp0 = NULL;
+    hazardNode -> hp1 = NULL;
     if (validateLink(previous, current)) {
       if (current -> val == val && current -> markedToDelete) {
         current -> markedToDelete = 0;
@@ -90,13 +102,18 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
   char retry = 1;
   while (retry) {
     node_t* previous = getElement(numask -> sentinel, val, hazardNode);
-    node_t* current = previous -> next;
+    hazardNode -> hp1 = previous -> next;
+    node_t* current = (node_t*)hazardNode -> hp1;
     while (current -> val < val) {
-      previous = current;
-      current = current -> next;
+      hazardNode -> hp0 = current;
+      previous = (node_t*)hazardNode -> hp0;
+      hazardNode -> hp1 = current -> next;
+      current = (node_t*)hazardNode -> hp1;
     }
     pthread_mutex_lock(&previous -> lock);
     pthread_mutex_lock(&current -> lock);
+    hazardNode -> hp0 = NULL;
+    hazardNode -> hp1 = NULL;
     if (validateLink(previous, current)) {
       if (current -> val != val || current -> markedToDelete) {
         pthread_mutex_unlock(&previous -> lock);
