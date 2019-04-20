@@ -5,6 +5,8 @@
 #include "SearchLayer.h"
 #include "SkipListLazyLock.h"
 #include "JobQueue.h"
+#include "LinkedList.h"
+#include "Hazard.h"
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
@@ -14,13 +16,16 @@
 #include <numa.h>
 #include <sched.h>
 
+inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList);
+
 searchLayer_t* constructSearchLayer(inode_t* sentinel, int zone) {
   searchLayer_t* numask = (searchLayer_t*)malloc(sizeof(searchLayer_t));
   numask -> sentinel = sentinel;
   numask -> numaZone = zone;
   numask -> updates = constructJobQueue();
-  numask -> finished = 0;
+  numask -> garbage = constructMemoryQueue();
   numask -> running = 0;
+  numask -> stopGarbageCollection = 0;
   numask -> sleep_time = 0;
   return numask;
 }
@@ -41,19 +46,27 @@ int searchLayerSize(searchLayer_t* numask) {
   return size;
 }
 
-void start(searchLayer_t* numask, int sleep_time) {
+void startIndexLayer(searchLayer_t* numask, int sleep_time) {
   numask -> sleep_time = sleep_time;
   if (numask -> running == 0) {
-    numask -> running = 1;
     numask -> finished = 0;
+
+    numask -> stopGarbageCollection = 0;
+    pthread_create(&numask -> reclaimer, NULL, garbageCollectionIndexLayer, (void*)numask);
+
     pthread_create(&numask -> helper, NULL, updateNumaZone, (void*)numask);
+    numask -> running = 1;
   }
 }
 
-void stop(searchLayer_t* numask) {
+void stopIndexLayer(searchLayer_t* numask) {
   if (numask -> running) {
     numask -> finished = 1;
     pthread_join(numask -> helper, NULL);
+
+    numask -> stopGarbageCollection = 1;
+    pthread_join(numask -> reclaimer, NULL);
+
     numask -> running = 0;
   }
 }
@@ -90,5 +103,35 @@ int runJob(inode_t* sentinel, q_node_t* job, int zone) {
   }
   return 1;
 }
+
+void* garbageCollectionIndexLayer(void* args) {
+  searchLayer_t* numask = (searchLayer_t*)args;
+  memory_queue_t* garbage = numask -> garbage;
+  const int numaZone = numask -> numaZone;
+
+  //Pin to Zone & CPU
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(numaZone, &cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
+  //Instantiate thread local retired list
+  LinkedList_t* retiredList = constructLinkedList();
+
+  while (numask -> stopGarbageCollection == 0) {
+    usleep(numask -> sleep_time);
+    collect(garbage, retiredList);
+  }
+  collect(garbage, retiredList);
+}
+
+inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList) {
+  m_node_t* subscriber;
+  while ((subscriber = mq_pop(garbage)) != NULL) {
+    RETIRE_INDEX_NODE(retiredList, subscriber -> node);
+    //free(subscriber);
+  }
+}
+
 
 #endif

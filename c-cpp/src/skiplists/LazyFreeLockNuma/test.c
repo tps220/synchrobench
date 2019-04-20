@@ -546,7 +546,7 @@ int main(int argc, char **argv)
 
   //start pernuma layer helper with 100000ms sleep time
   for(int i = 0; i < numberNumaZones; ++i) {
-    start(numaLayers[i], 100000);
+    startIndexLayer(numaLayers[i], 100000);
   }
 
   int cur_zone = 0;
