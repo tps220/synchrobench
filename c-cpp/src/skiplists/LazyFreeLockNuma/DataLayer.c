@@ -198,11 +198,11 @@ void startDataLayerHelpers(node_t* sentinel) {
     remover = constructDataLayerThread();
   }
   if (gc == NULL) {
-    gc = construct_gc_container();
+    //gc = construct_gc_container();
   }
   if (remover -> running == 0) {
-    gc -> stopGarbageCollection = 0;
-    pthread_create(&gc -> reclaimer, NULL, garbageCollectDataLayer, (void*)gc);
+    //gc -> stopGarbageCollection = 0;
+    //pthread_create(&gc -> reclaimer, NULL, garbageCollectDataLayer, (void*)gc);
 
     remover -> finished = 0;
     remover -> sentinel = sentinel;
@@ -217,8 +217,8 @@ void stopDataLayerHelpers() {
     pthread_join(remover -> runner, NULL);
     remover -> running = 0;
 
-    gc -> stopGarbageCollection = 1;
-    pthread_join(gc -> reclaimer, NULL);
+    //gc -> stopGarbageCollection = 1;
+    //pthread_join(gc -> reclaimer, NULL);
   }
 }
 
