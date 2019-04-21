@@ -238,7 +238,7 @@ inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList) {
   m_node_t* subscriber;
   while ((subscriber = mq_pop(garbage)) != NULL) {
     RETIRE_NODE(retiredList, subscriber -> node);
-    //free(subscriber);
+    free(subscriber);
   }
 }
 #endif

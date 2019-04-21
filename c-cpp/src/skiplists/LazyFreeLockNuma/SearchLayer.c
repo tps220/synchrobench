@@ -131,7 +131,7 @@ inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList, int zone
   m_node_t* subscriber;
   while ((subscriber = mq_pop(garbage)) != NULL) {
     RETIRE_INDEX_NODE(retiredList, subscriber -> node, zone);
-    //free(subscriber);
+    free(subscriber);
   }
 }
 
