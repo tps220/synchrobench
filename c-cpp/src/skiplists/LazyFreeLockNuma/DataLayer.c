@@ -189,7 +189,7 @@ inline gc_container_t* construct_gc_container() {
   gc_container_t* container = (gc_container_t*)malloc(sizeof(gc_container_t));
   container -> garbage = constructMemoryQueue();
   container -> retiredList = constructLinkedList();
-  containre -> stopGarbageCollection = 0;
+  container -> stopGarbageCollection = 0;
   return container;
 }
 
@@ -202,7 +202,7 @@ void startDataLayerHelpers(node_t* sentinel) {
   }
   if (remover -> running == 0) {
     gc -> stopGarbageCollection = 0;
-    pthread_create(&gc -> reclaimer, NULL, garbageCollectDataLayer, (void*)gc));
+    pthread_create(&gc -> reclaimer, NULL, garbageCollectDataLayer, (void*)gc);
 
     remover -> finished = 0;
     remover -> sentinel = sentinel;
@@ -225,7 +225,7 @@ void stopDataLayerHelpers() {
 void* garbageCollectDataLayer(void* args) {
   gc_container_t* gc = (gc_container_t*)args;
 
-  while (stopGarbageCollection == 0) {
+  while (gc -> stopGarbageCollection == 0) {
     usleep(1000);
     collect(gc -> garbage, gc -> retiredList);
   }
