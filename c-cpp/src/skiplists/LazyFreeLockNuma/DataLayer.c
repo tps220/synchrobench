@@ -49,7 +49,7 @@ inline int validateLink(node_t* previous, node_t* current) {
 }
 
 inline int validateRemoval(node_t* previous, node_t* current) {
-  return previous -> next == current && current -> markedToDelete;
+  return previous -> next == current && current -> markedToDelete && current -> fresh == 0;
 }
 
 int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
@@ -80,7 +80,7 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     pthread_mutex_lock(&current -> lock);
     hazardNode -> hp0 = NULL;
     hazardNode -> hp1 = NULL;
-    if (validateLink(previous, current)) {
+    if (validateLink(previous, current) && previous -> markedToDelete != 2) {
       if (current -> val == val && current -> markedToDelete) {
         current -> markedToDelete = 0;
         current -> fresh = 1;
@@ -160,6 +160,7 @@ void* backgroundRemoval(void* input) {
         pthread_mutex_lock(&previous -> lock);
         pthread_mutex_lock(&current -> lock);
         if ((valid = validateRemoval(previous, current)) != 0) {
+          current -> markedToDelete = 2;
           previous -> next = current -> next;
         }
         pthread_mutex_unlock(&previous -> lock);
