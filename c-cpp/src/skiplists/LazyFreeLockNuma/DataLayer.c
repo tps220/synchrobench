@@ -8,20 +8,19 @@
 #include <unistd.h>
 
 //Update helper
-dataLayerThread_t *remover = NULL;
-
+dataLayerThread_t* remover = NULL;
 //Gargabe Collection helper
-pthread_t reclaimer;
-volatile char stopGarbageCollection;
-memory_queue_t* garbage;
-LinkedList_t* retiredList;
-inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList);
+gc_container_t* gc = NULL;
 
 //Helper Functions
 inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode);
 inline void dispatchSignal(int val, node_t* dataLayer, Job operation);
 inline int validateLink(node_t* previous, node_t* current);
 inline int validateRemoval(node_t* previous, node_t* current);
+inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList);
+
+inline dataLayerThread_t* constructDataLayerThread();
+inline gc_container_t* construct_gc_container();
 
 inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode) {
   inode_t *previous = sentinel, *current = NULL;
@@ -177,7 +176,7 @@ void* backgroundRemoval(void* input) {
   return NULL;
 }
 
-static dataLayerThread_t* constructDataLayerThread() {
+inline dataLayerThread_t* constructDataLayerThread() {
   dataLayerThread_t* thread = (dataLayerThread_t*)malloc(sizeof(dataLayerThread_t));
   thread -> running = 0;
   thread -> finished = 0;
@@ -186,13 +185,24 @@ static dataLayerThread_t* constructDataLayerThread() {
   return thread;
 }
 
-void startDataLayerThread(node_t* sentinel) {
+inline gc_container_t* construct_gc_container() {
+  gc_container_t* container = (gc_container_t*)malloc(sizeof(gc_container_t));
+  container -> garbage = constructMemoryQueue();
+  container -> retiredList = constructLinkedList();
+  containre -> stopGarbageCollection = 0;
+  return container;
+}
+
+void startDataLayerHelpers(node_t* sentinel) {
   if (remover == NULL) {
     remover = constructDataLayerThread();
   }
+  if (gc == NULL) {
+    gc = construct_gc_container();
+  }
   if (remover -> running == 0) {
-    stopGarbageCollection = 0;
-    pthread_create(&reclaimer, NULL, garbageCollectDataLayer, NULL);
+    gc -> stopGarbageCollection = 0;
+    pthread_create(&gc -> reclaimer, NULL, garbageCollectDataLayer, (void*)gc));
 
     remover -> finished = 0;
     remover -> sentinel = sentinel;
@@ -201,26 +211,25 @@ void startDataLayerThread(node_t* sentinel) {
   }
 }
 
-void stopDataLayerThread() {
+void stopDataLayerHelpers() {
   if (remover -> running) {
     remover -> finished = 1;
     pthread_join(remover -> runner, NULL);
     remover -> running = 0;
 
-    stopGarbageCollection = 1;
-    pthread_join(reclaimer, NULL);
+    gc -> stopGarbageCollection = 1;
+    pthread_join(gc -> reclaimer, NULL);
   }
 }
 
 void* garbageCollectDataLayer(void* args) {
-  retiredList = constructLinkedList();
-  garbage = constructMemoryQueue();
+  gc_container_t* gc = (gc_container_t*)args;
 
   while (stopGarbageCollection == 0) {
     usleep(1000);
-    collect(garbage, retiredList);
+    collect(gc -> garbage, gc -> retiredList);
   }
-  collect(garbage, retiredList);
+  collect(gc -> garbage, gc -> retiredList);
 }
 
 inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList) {

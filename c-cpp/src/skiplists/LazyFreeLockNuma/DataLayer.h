@@ -16,6 +16,13 @@ typedef struct dataLayerThread_t {
   node_t* sentinel;
 } dataLayerThread_t;
 
+typedef struct gc_container {
+  pthread_t reclaimer;
+  volatile char stopGarbageCollection;
+  memory_queue_t* garbage;
+  LinkedList_t* retiredList;
+} gc_container_t;
+
 
 //Driver Functions
 int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode);
