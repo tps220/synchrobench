@@ -542,7 +542,7 @@ int main(int argc, char **argv)
 
   // start data-layer-helper thread
   char test_complete = 0;
-  startDataLayerThread(head);
+  startDataLayerHelpers(head);
 
   //start pernuma layer helper with 100000ms sleep time
   for(int i = 0; i < numberNumaZones; ++i) {
@@ -760,7 +760,7 @@ int main(int argc, char **argv)
   printf("Cleaning up...\n");
   // Stop background threads and destruct
   test_complete = 1;
-  stopDataLayerThread();
+  stopDataLayerHelpers();
   for(int i = 0; i < numberNumaZones; i++) {
     printf("finished %d\n", i);
     destructSearchLayer(numaLayers[i]);
