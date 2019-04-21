@@ -155,7 +155,7 @@ void* backgroundRemoval(void* input) {
           dispatchSignal(current -> val, current, INSERTION);
         }
       }
-      else if (current -> markedToDelete && current -> references % 4 == 0) {
+      else if (current -> markedToDelete && (current -> references == 0 || (current -> references < 0 && current -> references % numberNumaZones == 0))) {
         int valid = 0;
         pthread_mutex_lock(&previous -> lock);
         pthread_mutex_lock(&current -> lock);
