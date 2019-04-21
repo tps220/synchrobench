@@ -162,6 +162,7 @@ void* backgroundRemoval(void* input) {
         if ((valid = validateRemoval(previous, current)) != 0) {
           current -> markedToDelete = 2;
           previous -> next = current -> next;
+          mq_push(gc -> garbage, current);
         }
         pthread_mutex_unlock(&previous -> lock);
         pthread_mutex_unlock(&current -> lock);
