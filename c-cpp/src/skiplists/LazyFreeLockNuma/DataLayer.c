@@ -232,7 +232,7 @@ void* garbageCollectDataLayer(void* args) {
     collect(gc -> garbage, gc -> retiredList);
   }
   collect(gc -> garbage, gc -> retiredList);
-  destructJobQueue(gc -> garbage);
+  destructMemoryQueue(gc -> garbage);
   destructLinkedList(gc -> retiredList);
 }
 
