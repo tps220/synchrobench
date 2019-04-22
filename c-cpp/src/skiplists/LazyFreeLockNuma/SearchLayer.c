@@ -34,6 +34,12 @@ searchLayer_t* destructSearchLayer(searchLayer_t* numask) {
   stopIndexLayer(numask);
   destructJobQueue(numask -> updates);
   destructMemoryQueue(numask -> garbage);
+  inode_t* runner = numask -> sentinel;
+  while (runner != NULL) {
+    inode_t* temp = runner;
+    runner = runner -> next[0];
+    destructIndexNode(temp, numask -> numaZone);
+  }
   free(numask);
 }
 
@@ -125,6 +131,8 @@ void* garbageCollectionIndexLayer(void* args) {
     collect(garbage, retiredList, numaZone);
   }
   collect(garbage, retiredList, numaZone);
+  destructMemoryQueue(garbage);
+  destructLinkedList(retiredList);
 }
 
 inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList, int zone) {

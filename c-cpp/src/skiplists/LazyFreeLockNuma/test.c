@@ -52,7 +52,7 @@
 #define ATOMIC_FETCH_AND_INC_FULL(a)    (AO_fetch_and_add1_full((VOLATILE AO_t *)(a)))
 
 #define TRANSACTIONAL                   d -> unit_tx
-#define VOLATILE            volatile
+#define VOLATILE                        volatile
 
 #define VAL_MIN                         INT_MIN
 #define VAL_MAX                         INT_MAX
@@ -74,16 +74,14 @@ typedef struct barrier {
   int crossing;
 } barrier_t;
 
-void barrier_init(barrier_t *b, int n)
-{
+void barrier_init(barrier_t *b, int n) {
   pthread_cond_init(&b -> complete, NULL);
   pthread_mutex_init(&b -> mutex, NULL);
   b -> count = n;
   b -> crossing = 0;
 }
 
-void barrier_cross(barrier_t *b)
-{
+void barrier_cross(barrier_t *b) {
   pthread_mutex_lock(&b->mutex);
   /* One more thread through */
   b -> crossing++;
@@ -298,13 +296,11 @@ void* test(void *data) {
 }
 
 
-void catcher(int sig)
-{
+void catcher(int sig) {
   printf("CAUGHT SIGNAL %d\n", sig);
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   struct option long_options[] = {
     // These options don't set a flag
     {"help",                      no_argument,       NULL, 'h'},
@@ -442,7 +438,9 @@ int main(int argc, char **argv)
   assert(range > 0 && range >= initial);
   assert(update >= 0 && update <= 100);
   assert(numberNumaZones >= MIN_NUMA_ZONES && numberNumaZones <= MAX_NUMA_ZONES);
-  if(numberNumaZones > nb_threads) numberNumaZones = nb_threads;  // don't spawn unnecessary background threads
+  if (numberNumaZones > nb_threads) {
+    numberNumaZones = nb_threads; //don't spawn unnecessary background threads
+  }
 
   if(numa_available() == -1) {
     printf("Error: NUMA unavailable on this system.\n");
@@ -478,10 +476,12 @@ int main(int argc, char **argv)
     exit(1);
   }
 
-  if (seed == 0)
+  if (seed == 0) {
     srand((int)time(0));
-  else
+  }
+  else {
     srand(seed);
+  }
 
   levelmax = floor_log_2((unsigned int) initial);
 
@@ -489,6 +489,7 @@ int main(int argc, char **argv)
   node_t* tail = constructNode(INT_MAX, numberNumaZones);
   node_t* head = constructLinkedNode(INT_MIN, numberNumaZones, tail);
   printf("Created Data Layer Sentinels\n");
+
   //create search layers
   numaLayers = (searchLayer_t**)malloc(numberNumaZones * sizeof(searchLayer_t*));
   printf("Constructed Numa Layer \n");
@@ -513,14 +514,14 @@ int main(int argc, char **argv)
   for (int i = 0; i < numberNumaZones; ++i) {
     pthread_join(thds[i], NULL);
   }
-
+  free(thds);
   printf("Initialized search layers\n");
-  stop_condition = 0;
 
   //Initialize Hazard Container
   HazardNode_t* hazardNode = constructHazardNode(0);
   memoryLedger = constructHazardContainer(hazardNode);
 
+  stop_condition = 0;
   global_seed = rand();
 #ifdef TLS
   rng_seed = &global_seed;
@@ -544,9 +545,9 @@ int main(int argc, char **argv)
   char test_complete = 0;
   startDataLayerHelpers(head);
 
-  //start pernuma layer helper with 100000ms sleep time
+  //start pernuma layer helper with 100ms sleep time
   for(int i = 0; i < numberNumaZones; ++i) {
-    startIndexLayer(numaLayers[i], 100000);
+    startIndexLayer(numaLayers[i], 100);
   }
 
   int cur_zone = 0;
@@ -723,6 +724,8 @@ int main(int argc, char **argv)
     if (max_retries < data[i].max_retries)
       max_retries = data[i].max_retries;
   }
+  free(threads);
+	free(data);
 
   printf("Set size      : %d (expected: %d)\n", sl_size(head), size);
 //  printf("Size (w/ del) : %d\n", data_layer_size(sentinel_node, 0));
@@ -764,7 +767,12 @@ int main(int argc, char **argv)
   for(int i = 0; i < numberNumaZones; i++) {
     printf("finished %d\n", i);
     destructSearchLayer(numaLayers[i]);
+    destructAllocator(allocators[i]);
   }
+  free(numaLayers);
+	free(allocators);
+  sl_destruct(head);
+  destructHazardContainer(memoryLedger);
 
   // Cleanup STM
   //TM_SHUTDOWN();

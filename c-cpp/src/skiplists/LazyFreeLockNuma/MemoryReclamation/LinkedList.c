@@ -11,7 +11,7 @@ ListNode_t* constructListNode(void* ptr) {
 }
 
 void destructListNode(ListNode_t* node) {
-  free(node -> data); //doublefree potential
+  free(node -> data);
   free(node);
 }
 
