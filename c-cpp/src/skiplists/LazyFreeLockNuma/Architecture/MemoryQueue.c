@@ -6,6 +6,7 @@
 m_node_t* constructMNode(void* node) {
 	m_node_t* new_job = (m_node_t*)malloc(sizeof(m_node_t));
 	new_job -> node = node;
+  new_job -> next = NULL;
 	return new_job;
 }
 

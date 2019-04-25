@@ -131,7 +131,6 @@ void* garbageCollectionIndexLayer(void* args) {
     collect(garbage, retiredList, numaZone);
   }
   collect(garbage, retiredList, numaZone);
-  destructMemoryQueue(garbage);
   destructLinkedList(retiredList);
 }
 

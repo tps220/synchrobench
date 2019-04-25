@@ -8,6 +8,7 @@ q_node_t* constructQNode(int val, Job operation, node_t* node) {
   new_job -> val = val;
   new_job -> operation = operation;
   new_job -> node = node;
+  new_job -> next = NULL;
   return new_job;
 }
 

@@ -69,7 +69,7 @@ void reclaimIndexNode(void* ptr, int zone) {
 }
 
 void reclaimDataLayerNode(void* ptr, int zone) {
-  //free(ptr);
+  free(ptr);
 }
 
 #endif

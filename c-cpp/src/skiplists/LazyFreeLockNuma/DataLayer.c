@@ -147,7 +147,7 @@ void* backgroundRemoval(void* input) {
     node_t* current = sentinel -> next;
     while (current -> next != NULL) {
       if (current -> fresh) {
-        current -> fresh = 0; //unset as fresh, need a CAS here? only thread operating on structure
+        current -> fresh = 0;
         if (current -> markedToDelete) {
           dispatchSignal(current -> val, current, REMOVAL);
         }
