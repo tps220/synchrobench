@@ -18,7 +18,7 @@ inode_t* constructIndexNode(int val, int topLevel, node_t* dataLayer, int zone) 
 
 //constructor that initializes data fields of the index node and its lock, as well as
 //pointing each level of the tower to the provided next node
-inode_t* constructLinkedIndexNode(int val, int topLevel,node_t* dataLayer, int zone, inode_t* next) {
+inode_t* constructLinkedIndexNode(int val, int topLevel, node_t* dataLayer, int zone, inode_t* next) {
   inode_t* node = constructIndexNode(val, topLevel, dataLayer, zone);
   for (int i = 0; i < topLevel; i++) {
     node -> next[i] = next;
@@ -28,7 +28,7 @@ inode_t* constructLinkedIndexNode(int val, int topLevel,node_t* dataLayer, int z
 
 void destructIndexNode(inode_t* node, int zone) {
 	numa_allocator_t* allocator = allocators[zone];
-	nfree(allocator, node -> next[0], node -> topLevel * sizeof(inode_t*));
+	nfree(allocator, node -> next, node -> topLevel * sizeof(inode_t*));
 	nfree(allocator, node, sizeof(inode_t));
 }
 

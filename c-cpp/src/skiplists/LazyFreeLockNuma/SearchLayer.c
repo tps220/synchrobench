@@ -37,7 +37,7 @@ searchLayer_t* destructSearchLayer(searchLayer_t* numask) {
   inode_t* runner = numask -> sentinel;
   while (runner != NULL) {
     inode_t* temp = runner;
-    runner = runner -> next[0];
+    runner = (runner -> next == NULL) ? NULL : runner -> next[0];
     destructIndexNode(temp, numask -> numaZone);
   }
   free(numask);
