@@ -233,7 +233,7 @@ void* garbageCollectDataLayer(void* args) {
   }
   collect(gc -> garbage, gc -> retiredList);
   destructMemoryQueue(gc -> garbage);
-  destructLinkedList(gc -> retiredList);
+  destructLinkedList(gc -> retiredList, 1);
 }
 
 inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList) {

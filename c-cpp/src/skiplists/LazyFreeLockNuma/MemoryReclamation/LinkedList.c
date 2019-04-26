@@ -10,8 +10,10 @@ ListNode_t* constructListNode(void* ptr) {
   return node;
 }
 
-void destructListNode(ListNode_t* node) {
-  free(node -> data);
+void destructListNode(ListNode_t* node, isDataLayer) {
+  if (isDataLayer) {
+    free(node -> data);
+  }
   free(node);
 }
 
@@ -22,12 +24,12 @@ LinkedList_t* constructLinkedList() {
   return ll;
 }
 
-void destructLinkedList(LinkedList_t* ll) {
+void destructLinkedList(LinkedList_t* ll, int isDataLayer) {
   ListNode_t* runner = ll -> head;
   while (runner != NULL) {
     ListNode_t* temp = runner;
     runner = runner -> next;
-    destructListNode(temp);
+    destructListNode(isDataLayer);
   }
   free(ll);
 }

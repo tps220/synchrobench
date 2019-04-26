@@ -9,7 +9,7 @@ typedef struct ListNode {
 } ListNode_t;
 
 ListNode_t* constructListNode(void* ptr);
-void destructListNode(ListNode_t* node);
+void destructListNode(ListNode_t* node, int isDataLayer);
 
 typedef struct LinkedList {
   ListNode_t* head;
@@ -18,7 +18,7 @@ typedef struct LinkedList {
 } LinkedList_t;
 
 LinkedList_t* constructLinkedList();
-void destructLinkedList(LinkedList_t* ll);
+void destructLinkedList(LinkedList_t* ll, int isIndexLayer);
 int findElement(LinkedList_t* ll, void* node);
 void ll_push(LinkedList_t* ll, void* ptr);
 void* ll_pop(LinkedList_t* ll);
