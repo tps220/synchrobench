@@ -18,7 +18,7 @@ numa_allocator_t* constructAllocator(unsigned ssize) {
   allocator -> other_buffers = NULL;
   allocator -> last_alloc_half = 0;
   allocator -> cache_size = CACHE_LINE_SIZE;
-  allocator -> buf_cur = allocator -> buf_old = numa_alloc_local(allocator -> buf_size);
+  allocator -> buf_cur = allocator -> buf_start = numa_alloc_local(allocator -> buf_size);
   memset(allocator -> buf_cur, 0, allocator -> buf_size);
   pthread_mutex_init(&allocator -> lock, NULL);
   return allocator;
