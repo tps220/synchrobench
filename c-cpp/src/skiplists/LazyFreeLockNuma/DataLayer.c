@@ -186,6 +186,11 @@ inline dataLayerThread_t* constructDataLayerThread() {
   return thread;
 }
 
+inline void destructDataLayerThread(dataLayerThread_t* thread) {
+  free(thread);
+  thread = NULL;
+}
+
 inline gc_container_t* construct_gc_container() {
   gc_container_t* container = (gc_container_t*)malloc(sizeof(gc_container_t));
   container -> garbage = constructMemoryQueue();
@@ -223,6 +228,7 @@ void stopDataLayerHelpers() {
     remover -> finished = 1;
     pthread_join(remover -> runner, NULL);
     remover -> running = 0;
+    destructDataLayerThread(remover);
 
     gc -> stopGarbageCollection = 1;
     pthread_join(gc -> reclaimer, NULL);
