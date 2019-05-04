@@ -20,7 +20,6 @@ inline int validateRemoval(node_t* previous, node_t* current);
 inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList);
 
 inline dataLayerThread_t* constructDataLayerThread();
-inline gc_container_t* construct_gc_container();
 
 inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode) {
   inode_t *previous = sentinel, *current = NULL;
@@ -195,6 +194,12 @@ inline gc_container_t* construct_gc_container() {
   return container;
 }
 
+inline void destruct_gc_container(gc_container_t* gc) {
+  destructMemoryQueue(gc -> garbage);
+  destructLinkedList(gc -> retiredList, 1);
+  free(gc);
+}
+
 void startDataLayerHelpers(node_t* sentinel) {
   if (remover == NULL) {
     remover = constructDataLayerThread();
@@ -221,6 +226,7 @@ void stopDataLayerHelpers() {
 
     gc -> stopGarbageCollection = 1;
     pthread_join(gc -> reclaimer, NULL);
+    destruct_gc_container(gc);
   }
 }
 
@@ -232,8 +238,6 @@ void* garbageCollectDataLayer(void* args) {
     collect(gc -> garbage, gc -> retiredList);
   }
   collect(gc -> garbage, gc -> retiredList);
-  destructMemoryQueue(gc -> garbage);
-  destructLinkedList(gc -> retiredList, 1);
 }
 
 inline void collect(memory_queue_t* garbage, LinkedList_t* retiredList) {

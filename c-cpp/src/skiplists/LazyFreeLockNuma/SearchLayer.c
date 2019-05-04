@@ -109,6 +109,7 @@ int runJob(inode_t* sentinel, q_node_t* job, int zone, memory_queue_t* gc) {
   else if (job -> operation == REMOVAL) {
     removeNode(sentinel, job -> val, zone, gc);
   }
+  free(job);
   return 1;
 }
 
