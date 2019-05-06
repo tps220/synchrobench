@@ -19,7 +19,7 @@ numa_allocator_t* constructAllocator(unsigned ssize) {
   allocator -> last_alloc_half = 0;
   allocator -> cache_size = CACHE_LINE_SIZE;
   allocator -> buf_cur = allocator -> buf_start = numa_alloc_local(allocator -> buf_size);
-  memset(allocator -> buf_cur, 0, allocator -> buf_size);
+  memset(allocator -> buf_start, 0, allocator -> buf_size);
   pthread_mutex_init(&allocator -> lock, NULL);
   return allocator;
 }
@@ -72,7 +72,7 @@ void nfree(numa_allocator_t* allocator, void *ptr, unsigned ssize) {
   unsigned aligned_size = align(ssize, alignment);
 
   //only "free" if last allocation
-  if (!memcmp(ptr, allocator -> buf_old, aligned_size)) {
+  if (ptr == allocator -> buf_old) {
     allocator -> buf_cur = allocator -> buf_old;
     memset(allocator -> buf_cur, 0, aligned_size);
     if (allocator -> last_alloc_half && (alignment == cache_size / 2)) {
@@ -85,7 +85,6 @@ void nfree(numa_allocator_t* allocator, void *ptr, unsigned ssize) {
 static void nreset(numa_allocator_t* allocator) {
   pthread_mutex_lock(&allocator -> lock);
   if (!allocator -> empty) {
-    allocator -> empty = 1;
     //free other_buffers, if used
     if (allocator -> other_buffers != NULL) {
       int i = allocator -> num_buffers - 1;
@@ -97,6 +96,7 @@ static void nreset(numa_allocator_t* allocator) {
     }
     //free primary buffer
     numa_free(allocator -> buf_start, allocator -> buf_size);
+    allocator -> empty = 1;
   }
   pthread_mutex_unlock(&allocator -> lock);
 }

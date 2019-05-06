@@ -11,7 +11,7 @@ int add(inode_t *sentinel, int val, node_t* dataLayer, int zone) {
   inode_t *previous = sentinel, *current = NULL;
 
   //Lazily searches the skip list, disregarding locks
-  for (int i = previous -> topLevel - 1; i >= 0; i--) {
+  for (int i = sentinel -> topLevel - 1; i >= 0; i--) {
     current = previous -> next[i];
     while (current -> val < val) {
       previous = current;
@@ -43,7 +43,7 @@ int removeNode(inode_t *sentinel, int val, int zone, memory_queue_t* garbage) {
   inode_t *previous = sentinel, *current = NULL;
 
   //Lazily searches the skip list, disregarding locks
-  for (int i = previous -> topLevel - 1; i >= 0; i--) {
+  for (int i = sentinel -> topLevel - 1; i >= 0; i--) {
     current = previous -> next[i];
     while (current -> val < val) {
       previous = current;
