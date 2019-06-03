@@ -7,10 +7,13 @@
 #include <assert.h>
 #include <unistd.h>
 
-//Update helper
+//Update helpers
 dataLayerThread_t* remover = NULL;
+dataLayerThread_t* updater = NULL;
 //Gargabe Collection helper
 gc_container_t* gc = NULL;
+//Deletion helper
+multi_queue_t** mq = NULL;
 
 //Helper Functions
 inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazardNode);
@@ -48,7 +51,11 @@ inline int validateLink(node_t* previous, node_t* current) {
 }
 
 inline int validateRemoval(node_t* previous, node_t* current) {
-  return previous -> next == current && current -> markedToDelete && current -> fresh == 0;
+  return previous -> next == current && 
+         current -> previous == previous &&
+         current -> markedToDelete && 
+         current -> fresh == 0 && 
+         current -> attempts * -1 * numberNumaZones == current -> references;
 }
 
 int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
@@ -82,7 +89,7 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     if (validateLink(previous, current) && previous -> markedToDelete != 2) {
       if (current -> val == val && current -> markedToDelete) {
         current -> markedToDelete = 0;
-        current -> fresh = 1;
+        current -> fresh = 2;
         pthread_mutex_unlock(&previous -> lock);
         pthread_mutex_unlock(&current -> lock);
         return 1;
@@ -94,7 +101,11 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
       }
       node_t* insertion = constructNode(val, numberNumaZones); //automatically set as fresh
       insertion -> next = current;
+      insertion -> previous = previous;
+
       previous -> next = insertion;
+      current -> previous = insertion;
+
       pthread_mutex_unlock(&previous -> lock);
       pthread_mutex_unlock(&current -> lock);
       return 1;
@@ -137,51 +148,96 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
   }
 }
 
-void* backgroundRemoval(void* input) {
+void updates(multi_queue_t* queue) {
+  multi_node_t* consumer = multi_pop(queue);
+  if (consumer) {
+    node_t* target = consumer -> target;
+    if (target -> fresh) {
+      target -> fresh = 0;
+      if (target -> markedToDelete) {
+        target -> attempts++;
+        dispatchSignal(target -> val, target, REMOVAL);
+      }
+      else {
+        dispatchSignal(target -> val, target, INSERTION);
+      }
+    }
+  }
+}
+
+void* backgroundPropogation(void* input) {
   dataLayerThread_t* thread = (dataLayerThread_t*)input;
   node_t* sentinel = thread -> sentinel;
   while (thread -> finished == 0) {
     usleep(thread -> sleep_time);
-    node_t* previous = sentinel;
-    node_t* current = sentinel -> next;
-    while (current -> next != NULL) {
-      if (current -> fresh) {
-        current -> fresh = 0;
-        if (current -> markedToDelete) {
-          dispatchSignal(current -> val, current, REMOVAL);
+    node_t* runner = sentinel -> next;
+    while (runner -> next != NULL) {
+      if (runner -> fresh) {
+        runner -> fresh = 0;
+        if (runner -> markedToDelete) {
+          runner -> attempts++;
+          //fprintf(stderr, "SHOT UP\n");
+          dispatchSignal(runner -> val, runner, REMOVAL);
         }
         else {
-          dispatchSignal(current -> val, current, INSERTION);
+          dispatchSignal(runner -> val, runner, INSERTION);
         }
       }
-      else if (current -> markedToDelete && (current -> references == 0 || (current -> references < 0 && current -> references % numberNumaZones == 0))) {
-        int valid = 0;
-        pthread_mutex_lock(&previous -> lock);
-        pthread_mutex_lock(&current -> lock);
-        if ((valid = validateRemoval(previous, current)) != 0) {
-          current -> markedToDelete = 2;
-          previous -> next = current -> next;
-        }
-        pthread_mutex_unlock(&previous -> lock);
-        pthread_mutex_unlock(&current -> lock);
-        if (valid) {
-          mq_push(gc -> garbage, current);
-          current = previous -> next;
-          continue;
-        }
-      }
-      previous = current;
-      current = current -> next;
+      runner = runner -> next;
     }
   }
   return NULL;
+}
+
+void removal(multi_queue_t *queue) {
+  multi_node_t* consumer = multi_pop(queue);
+  if (consumer) {
+    node_t* target = consumer -> target;
+    node_t* previous = target -> previous;
+
+    pthread_mutex_lock(&previous -> lock);
+    pthread_mutex_lock(&target -> lock);
+    int valid;
+    if ((valid = validateRemoval(previous, target)) != 0) {
+      target -> markedToDelete = 2;
+      previous -> next = target -> next;
+      target -> next -> previous = previous;
+      //fprintf(stderr, "REMOVING GUYS\n");
+    }
+    pthread_mutex_unlock(&previous -> lock);
+    pthread_mutex_unlock(&target -> lock);
+    if (valid) {
+      mq_push(gc -> garbage, target);
+    }
+    else {
+      target -> inQueue = 0;
+      multi_push(mq[numberNumaZones], target);
+    }
+  }
+}
+
+void* backgroundRemoval(void* input) {
+  dataLayerThread_t* thread = (dataLayerThread_t*)input;
+  while (thread -> finished == 0) {
+    for (int i = 0; i < numberNumaZones + 1; i++) {
+      removal(mq[i]);
+    }
+  }
+  return NULL;
+}
+
+inline void constructMQs() {
+  mq = (multi_queue_t**)malloc((numberNumaZones + 1) * sizeof(multi_queue_t*));
+  for (int i = 0; i < numberNumaZones + 1; i++) {
+    mq[i] = constructMultiQueue();
+  }
 }
 
 inline dataLayerThread_t* constructDataLayerThread() {
   dataLayerThread_t* thread = (dataLayerThread_t*)malloc(sizeof(dataLayerThread_t));
   thread -> running = 0;
   thread -> finished = 0;
-  thread -> sleep_time = 10000;
+  thread -> sleep_time = 100;
   thread -> sentinel = NULL;
   return thread;
 }
@@ -206,25 +262,37 @@ inline void destruct_gc_container(gc_container_t* gc) {
 }
 
 void startDataLayerHelpers(node_t* sentinel) {
-  if (remover == NULL) {
-    remover = constructDataLayerThread();
+  if (updater == NULL) {
+    updater = constructDataLayerThread();
   }
   if (gc == NULL) {
     gc = construct_gc_container();
   }
-  if (remover -> running == 0) {
+  if (remover == NULL) {
+    remover = constructDataLayerThread();
+  }
+  if (mq == NULL) {
+    constructMQs();
+  }
+  if (updater -> running == 0) {
     gc -> stopGarbageCollection = 0;
     pthread_create(&gc -> reclaimer, NULL, garbageCollectDataLayer, (void*)gc);
 
-    remover -> finished = 0;
-    remover -> sentinel = sentinel;
+    updater -> finished = 0;
+    updater -> sentinel = sentinel;
+    pthread_create(&updater -> runner, NULL, backgroundPropogation, (void*)updater);
     pthread_create(&remover -> runner, NULL, backgroundRemoval, (void*)remover);
-    remover -> running = 1;
+    updater -> running = 1;
   }
 }
 
 void stopDataLayerHelpers() {
-  if (remover -> running) {
+  if (updater -> running) {
+    updater -> finished = 1;
+    pthread_join(updater -> runner, NULL);
+    updater -> running = 0;
+    destructDataLayerThread(updater);
+
     remover -> finished = 1;
     pthread_join(remover -> runner, NULL);
     remover -> running = 0;
@@ -240,7 +308,7 @@ void* garbageCollectDataLayer(void* args) {
   gc_container_t* gc = (gc_container_t*)args;
 
   while (gc -> stopGarbageCollection == 0) {
-    usleep(1000);
+    usleep(10);
     collect(gc -> garbage, gc -> retiredList);
   }
   collect(gc -> garbage, gc -> retiredList);

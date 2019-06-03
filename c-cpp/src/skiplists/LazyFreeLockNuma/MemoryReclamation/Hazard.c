@@ -3,10 +3,12 @@
 #include "Hazard.h"
 #include "Nodes.h"
 #include "Atomic.h"
+#include "stdio.h"
 
-HazardNode_t* constructHazardNode(int zone) {
+HazardNode_t* constructHazardNode(int zone, int id) {
     HazardNode_t* node = (HazardNode_t*)nalloc(allocators[zone], sizeof(HazardNode_t));
     node -> hp0 = node -> hp1 = NULL;
+    node -> id = id;
     node -> next = NULL;
     return node;
 }
@@ -24,7 +26,6 @@ HazardContainer_t* constructHazardContainer(HazardNode_t* head) {
 void destructHazardContainer(HazardContainer_t* container) {
   free(container);
 }
-
 
 void retireElement(LinkedList_t* retiredList, void* ptr, void (*reclaimMemory)(void*, int), int zone) {
   ll_push(retiredList, ptr);
@@ -64,7 +65,6 @@ void scan(LinkedList_t* retiredList, void (*reclaimMemory)(void*, int), int zone
 
 void reclaimIndexNode(void* ptr, int zone) {
   inode_t* node = (inode_t*)ptr;
-  FAD(&node -> dataLayer -> references);
   destructIndexNode(node, zone);
   node = NULL;
 }

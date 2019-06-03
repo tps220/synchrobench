@@ -38,8 +38,11 @@ node_t* constructNode(int val, int initialReferences) {
   node_t* node = (node_t*)malloc(sizeof(node_t));
   node -> val = val;
   node -> next = NULL;
+  node -> previous = NULL;
   node -> markedToDelete = 0;
-  node -> references = initialReferences; //QUESTION: is this okay? instantiating number of references before actual additions
+  node -> references = 0;
+  node -> attempts = 0;
+  //node -> references = initialReferences; //QUESTION: is this okay? instantiating number of references before actual additions
   node -> fresh = 1; //automatically marked as fresh on construction
   pthread_mutex_init(&node -> lock, NULL);
   return node;
@@ -50,6 +53,7 @@ node_t* constructNode(int val, int initialReferences) {
 node_t* constructLinkedNode(int val, int initialReferences, node_t* next) {
   node_t* node = constructNode(val, initialReferences);
   node -> next = next;
+  next -> previous = node;
   return node;
 }
 

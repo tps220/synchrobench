@@ -518,7 +518,7 @@ int main(int argc, char **argv) {
   printf("Initialized search layers\n");
 
   //Initialize Hazard Container
-  HazardNode_t* hazardNode = constructHazardNode(0);
+  HazardNode_t* hazardNode = constructHazardNode(0, 0);
   memoryLedger = constructHazardContainer(hazardNode);
 
   stop_condition = 0;
@@ -617,7 +617,7 @@ int main(int argc, char **argv) {
       sl_index = 0;
     }
     if (i != nb_threads - 1) {
-      hazardNode -> next = constructHazardNode(sl_index);
+      hazardNode -> next = constructHazardNode(sl_index, i + 1);
       hazardNode = hazardNode -> next;
     }
     if (pthread_create(&threads[i], &attr, test, (void *)(&data[i])) != 0) {
@@ -702,7 +702,7 @@ int main(int argc, char **argv) {
     printf("    #dup-w    : %lu\n", data[i].nb_aborts_double_write);
     printf("    #failures : %lu\n", data[i].failures_because_contention);
     printf("  Max retries : %lu\n", data[i].max_retries);
-        */
+   */     
     aborts += data[i].nb_aborts;
     aborts_locked_read += data[i].nb_aborts_locked_read;
     aborts_locked_write += data[i].nb_aborts_locked_write;
@@ -764,8 +764,10 @@ int main(int argc, char **argv) {
   // Stop background threads and destruct
   test_complete = 1;
   stopDataLayerHelpers();
+  printf("Data layer size: %d\n", sl_real_size(head));
   for(int i = 0; i < numberNumaZones; i++) {
     printf("finished %d\n", i);
+    printf("serach layer %d size: %d\n", i, searchLayerSize(numaLayers[i]));
     destructSearchLayer(numaLayers[i]);
     destructAllocator(allocators[i]);
   }
@@ -773,6 +775,7 @@ int main(int argc, char **argv) {
 	free(allocators);
   sl_destruct(head);
   destructHazardContainer(memoryLedger);
+  destructMQs();
 
   // Cleanup STM
   //TM_SHUTDOWN();

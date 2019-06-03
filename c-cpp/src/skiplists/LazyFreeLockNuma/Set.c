@@ -36,4 +36,22 @@ void sl_destruct(node_t* sentinel) {
 	}
 }
 
+int sl_real_size(node_t* sentinel) {
+  node_t* runner = sentinel;
+  int size = 0;
+  while (runner != NULL) {
+    runner = runner -> next;
+    size++;
+  }
+  return size;
+}
+
+void destructMQs() {
+  for (int i = 0; i < numberNumaZones; i++) {
+    destructMultiQueue(mq[i]);
+  }
+  free(mq);
+  mq = NULL;
+}
+
 #endif

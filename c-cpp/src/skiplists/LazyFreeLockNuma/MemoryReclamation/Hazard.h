@@ -10,10 +10,14 @@ extern numa_allocator_t** allocators;
 typedef struct HazardNode {
     void* hp0;
     void* hp1;
+    int deletions;
+    int insertions;
+    int overrides;
+    int id;
     struct HazardNode* next;
 } HazardNode_t;
 
-HazardNode_t* constructHazardNode(int zone);
+HazardNode_t* constructHazardNode(int zone, int id);
 void destructHazardNode(HazardNode_t* node, int zone);
 
 typedef struct HazardContainer {
