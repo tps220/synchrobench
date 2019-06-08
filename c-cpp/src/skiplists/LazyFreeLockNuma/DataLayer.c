@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <assert.h>
 #include <unistd.h>
+#include <stdio.h>
 
 //Update helpers
 dataLayerThread_t* remover = NULL;
@@ -60,10 +61,13 @@ inline int validateRemoval(node_t* previous, node_t* current) {
 
 int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
   node_t* current = getElement(numask -> sentinel, val, hazardNode);
+  int count = 0;
   while (current -> val < val) {
+    count += current -> markedToDelete & 1;
     hazardNode -> hp0 = current -> next;
     current = (node_t*)hazardNode -> hp0;
   }
+  fprintf(stdout, "%d\n", count);
   int found = current -> val == val && current -> markedToDelete == 0;
   hazardNode -> hp0 = NULL;
   hazardNode -> hp1 = NULL;
