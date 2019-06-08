@@ -41,6 +41,9 @@ int add(inode_t *sentinel, int val, node_t* dataLayer, int zone) {
     }
     return 1;
   }
+  else {
+    __sync_fetch_and_sub(&dataLayer -> references, 1);
+  }
   return 0;
 }
 
