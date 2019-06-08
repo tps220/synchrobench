@@ -56,7 +56,7 @@ inline int validateRemoval(node_t* previous, node_t* current) {
          current -> previous == previous &&
          current -> markedToDelete && 
          current -> fresh == 0 && 
-         current -> attempts * -1 * numberNumaZones == current -> references;
+         current -> references == 0;
 }
 
 int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
@@ -202,7 +202,7 @@ void* backgroundPropogation(void* input) {
           dispatchSignal(runner -> val, runner, REMOVAL);
         }
         else {
-          runner -> attempts++;
+          runner -> references += numberNumaZones;
           dispatchSignal(runner -> val, runner, INSERTION);
         }
       }

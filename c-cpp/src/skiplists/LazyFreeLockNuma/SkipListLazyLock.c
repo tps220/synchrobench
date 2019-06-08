@@ -9,7 +9,7 @@ extern multi_queue_t** mq;
 inline int validateRemoval(node_t* current) {
   return current -> markedToDelete && 
         current -> fresh == 0 && 
-        current -> attempts * -1 * numberNumaZones == current -> references;
+        current -> references == 0;
 }
 
 //Inserts a value into the skip list if it doesn't already exist
