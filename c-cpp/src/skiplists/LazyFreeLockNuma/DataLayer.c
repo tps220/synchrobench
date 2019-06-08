@@ -68,6 +68,7 @@ int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     count += current -> markedToDelete & 1;
     if (current -> markedToDelete && validateRemoval(previous, current)) {
       multi_push(mq[numberNumaZones + hazardNode -> id], current);
+      fprintf(stderr, "Find %d\n", hazardNode -> id);
     }
     hazardNode -> hp0 = current;
     previous = (node_t*)hazardNode -> hp0;
@@ -91,6 +92,7 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     while (current -> val < val) {
       count += current -> markedToDelete & 1;
       if (current -> markedToDelete && validateRemoval(previous, current)) {
+        fprintf(stderr, "Add %d\n", hazardNode -> id);
         multi_push(mq[numberNumaZones + hazardNode -> id], current);
       }
       hazardNode -> hp0 = current;
@@ -142,6 +144,7 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     while (current -> val < val) {
       count += current -> markedToDelete & 1;
       if (current -> markedToDelete && validateRemoval(previous, current)) {
+        fprintf(stderr, "Remove %d\n", hazardNode -> id);
         multi_push(mq[numberNumaZones + hazardNode -> id], current);
       }
       hazardNode -> hp0 = current;
