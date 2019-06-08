@@ -60,12 +60,19 @@ inline int validateRemoval(node_t* previous, node_t* current) {
 }
 
 int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
-  node_t* current = getElement(numask -> sentinel, val, hazardNode);
+  node_t* previous = getElement(numask -> sentinel, val, hazardNode);
+  hazardNode -> hp1 = previous -> next;
+  node_t* current = (node_t*)hazardNode -> hp1;
   int count = 0;
   while (current -> val < val) {
     count += current -> markedToDelete & 1;
-    hazardNode -> hp0 = current -> next;
-    current = (node_t*)hazardNode -> hp0;
+    if (current -> markedToDelete && validateRemoval(previous, current)) {
+      multi_push(mq[numberNumaZones + hazardNode -> id], current);
+    }
+    hazardNode -> hp0 = current;
+    previous = (node_t*)hazardNode -> hp0;
+    hazardNode -> hp1 = current -> next;
+    current = (node_t*)hazardNode -> hp1;
   }
   //fprintf(stdout, "%d\n", count);
   int found = current -> val == val && current -> markedToDelete == 0;
@@ -205,10 +212,9 @@ void* backgroundPropogation(void* input) {
   return NULL;
 }
 
-void removal(multi_queue_t *queue) {
+int removal(multi_queue_t *queue) {
   multi_node_t* consumer = multi_pop(queue);
   if (consumer) {
-    fprintf(stderr, "HIT \n");
     node_t* target = consumer -> target;
     node_t* previous = target -> previous;
 
@@ -230,19 +236,22 @@ void removal(multi_queue_t *queue) {
       target -> inQueue = 0;
       multi_push(mq[numberNumaZones + numThreads], target);
     }
+    return 1;
   }
-  else {
-    fprintf(stderr, "NO HIT \n");
-  }
+  return 0;
 }
 
 void* backgroundRemoval(void* input) {
+  int noHit = 0;
+  int hit = 0;
   dataLayerThread_t* thread = (dataLayerThread_t*)input;
   while (thread -> finished == 0) {
     for (int i = 0; i < numberNumaZones + numThreads + 1; i++) {
-      removal(mq[i]);
+      if (removal(mq[i])) hit++;
+      else noHit++;
     }
   }
+  fprintf(stderr, "No Hit vs Hit: %d vs %d\n", noHit, hit);
   return NULL;
 }
 
