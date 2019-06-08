@@ -208,6 +208,7 @@ void* backgroundPropogation(void* input) {
 void removal(multi_queue_t *queue) {
   multi_node_t* consumer = multi_pop(queue);
   if (consumer) {
+    fprintf(stderr, "HIT \n");
     node_t* target = consumer -> target;
     node_t* previous = target -> previous;
 
@@ -230,6 +231,9 @@ void removal(multi_queue_t *queue) {
       multi_push(mq[numberNumaZones + numThreads], target);
     }
   }
+  else {
+    fprintf(stderr, "NO HIT \n");
+  }
 }
 
 void* backgroundRemoval(void* input) {
@@ -243,7 +247,7 @@ void* backgroundRemoval(void* input) {
 }
 
 inline void constructMQs() {
-  mq = (multi_queue_t**)malloc((numberNumaZones + 1) * sizeof(multi_queue_t*));
+  mq = (multi_queue_t**)malloc((numberNumaZones + numThreads + 1) * sizeof(multi_queue_t*));
   for (int i = 0; i < numberNumaZones + numThreads + 1; i++) {
     mq[i] = constructMultiQueue();
   }
