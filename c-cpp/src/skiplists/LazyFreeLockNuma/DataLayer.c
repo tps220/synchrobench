@@ -198,11 +198,11 @@ void* backgroundPropogation(void* input) {
       if (runner -> fresh) {
         runner -> fresh = 0;
         if (runner -> markedToDelete) {
-          runner -> attempts++;
           //fprintf(stderr, "SHOT UP\n");
           dispatchSignal(runner -> val, runner, REMOVAL);
         }
         else {
+          runner -> attempts++;
           dispatchSignal(runner -> val, runner, INSERTION);
         }
       }

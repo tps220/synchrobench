@@ -74,10 +74,10 @@ int removeNode(inode_t *sentinel, int val, node_t* dataLayer, int zone, memory_q
         predecessors[i] -> next[i] = successors[i] -> next[i];
     }
     mq_push(garbage, candidate);
+    __sync_fetch_and_sub(&dataLayer -> references, 1);
     retval = 1;
   }
   
-  __sync_fetch_and_sub(&dataLayer -> references, 1);
   if (validateRemoval(dataLayer)) {
     multi_push(mq[zone], dataLayer);
   }
