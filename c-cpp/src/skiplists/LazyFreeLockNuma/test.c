@@ -103,6 +103,7 @@ extern HazardContainer_t* memoryLedger;
 extern searchLayer_t** numaLayers;
 extern numa_allocator_t** allocators;
 extern int numberNumaZones;
+extern int numThreads;
 extern unsigned int levelmax;
 extern dataLayerThread_t* remover;
 typedef struct zone_init_args {
@@ -484,6 +485,7 @@ int main(int argc, char **argv) {
   }
 
   levelmax = floor_log_2((unsigned int) initial);
+  numThreads = nb_threads;
 
   //create sentinel node on NUMA zone 0
   node_t* tail = constructNode(INT_MAX, numberNumaZones);

@@ -9,6 +9,7 @@
 searchLayer_t** numaLayers;
 numa_allocator_t** allocators;
 int numberNumaZones;
+int numThreads;
 unsigned int levelmax;
 HazardContainer_t* memoryLedger;
 extern multi_queue_t** mq;

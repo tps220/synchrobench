@@ -67,7 +67,7 @@ int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     hazardNode -> hp0 = current -> next;
     current = (node_t*)hazardNode -> hp0;
   }
-  fprintf(stdout, "%d\n", count);
+  //fprintf(stdout, "%d\n", count);
   int found = current -> val == val && current -> markedToDelete == 0;
   hazardNode -> hp0 = NULL;
   hazardNode -> hp1 = NULL;
@@ -80,12 +80,18 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     node_t* previous = getElement(numask -> sentinel, val, hazardNode);
     hazardNode -> hp1 = previous -> next;
     node_t* current = (node_t*)hazardNode -> hp1;
+    int count = 0;
     while (current -> val < val) {
+      count += current -> markedToDelete & 1;
+      if (current -> markedToDelete && validateRemoval(previous, current)) {
+        multi_push(mq[numberNumaZones + hazardNode -> id], current);
+      }
       hazardNode -> hp0 = current;
       previous = (node_t*)hazardNode -> hp0;
       hazardNode -> hp1 = current -> next;
       current = (node_t*)hazardNode -> hp1;
     }
+    fprintf(stdout, "%d\n", count);
     pthread_mutex_lock(&previous -> lock);
     pthread_mutex_lock(&current -> lock);
     hazardNode -> hp0 = NULL;
@@ -125,12 +131,18 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     node_t* previous = getElement(numask -> sentinel, val, hazardNode);
     hazardNode -> hp1 = previous -> next;
     node_t* current = (node_t*)hazardNode -> hp1;
+    int count = 0;
     while (current -> val < val) {
+      count += current -> markedToDelete & 1;
+      if (current -> markedToDelete && validateRemoval(previous, current)) {
+        multi_push(mq[numberNumaZones + hazardNode -> id], current);
+      }
       hazardNode -> hp0 = current;
       previous = (node_t*)hazardNode -> hp0;
       hazardNode -> hp1 = current -> next;
       current = (node_t*)hazardNode -> hp1;
     }
+    fprintf(stdout, "%d\n", count);
     pthread_mutex_lock(&previous -> lock);
     pthread_mutex_lock(&current -> lock);
     hazardNode -> hp0 = NULL;
@@ -215,7 +227,7 @@ void removal(multi_queue_t *queue) {
     }
     else {
       target -> inQueue = 0;
-      multi_push(mq[numberNumaZones], target);
+      multi_push(mq[numberNumaZones + numThreads], target);
     }
   }
 }
@@ -223,7 +235,7 @@ void removal(multi_queue_t *queue) {
 void* backgroundRemoval(void* input) {
   dataLayerThread_t* thread = (dataLayerThread_t*)input;
   while (thread -> finished == 0) {
-    for (int i = 0; i < numberNumaZones + 1; i++) {
+    for (int i = 0; i < numberNumaZones + numThreads + 1; i++) {
       removal(mq[i]);
     }
   }
@@ -232,7 +244,7 @@ void* backgroundRemoval(void* input) {
 
 inline void constructMQs() {
   mq = (multi_queue_t**)malloc((numberNumaZones + 1) * sizeof(multi_queue_t*));
-  for (int i = 0; i < numberNumaZones + 1; i++) {
+  for (int i = 0; i < numberNumaZones + numThreads + 1; i++) {
     mq[i] = constructMultiQueue();
   }
 }
