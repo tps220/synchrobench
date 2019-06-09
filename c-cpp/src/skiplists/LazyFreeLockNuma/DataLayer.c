@@ -233,7 +233,6 @@ int removal(multi_queue_t *queue) {
       mq_push(gc -> garbage, target);
     }
     else {
-      target -> inQueue = 0;
       multi_push(mq[numberNumaZones + numThreads], target);
     }
     return 1;
