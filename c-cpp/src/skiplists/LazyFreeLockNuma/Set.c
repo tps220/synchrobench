@@ -46,12 +46,4 @@ int sl_real_size(node_t* sentinel) {
   return size;
 }
 
-void destructMQs() {
-  for (int i = 0; i < numberNumaZones; i++) {
-    destructMultiQueue(mq[i]);
-  }
-  free(mq);
-  mq = NULL;
-}
-
 #endif

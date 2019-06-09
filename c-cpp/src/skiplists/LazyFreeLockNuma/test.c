@@ -777,7 +777,6 @@ int main(int argc, char **argv) {
 	free(allocators);
   sl_destruct(head);
   destructHazardContainer(memoryLedger);
-  destructMQs();
 
   // Cleanup STM
   //TM_SHUTDOWN();
