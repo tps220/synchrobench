@@ -79,6 +79,7 @@ int removeNode(inode_t *sentinel, int val, node_t* dataLayer, int zone, memory_q
   }
   
   if (validateRemoval(dataLayer)) {
+    dataLayer -> fresh = 0;
     multi_push(mq[zone], dataLayer);
   }
   return retval;

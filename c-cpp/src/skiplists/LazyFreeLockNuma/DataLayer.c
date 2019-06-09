@@ -37,6 +37,7 @@ inline node_t* getElement(inode_t* sentinel, const int val, HazardNode_t* hazard
       current = (inode_t*)hazardNode -> hp1;
     }
   }
+  hazardNode -> hp0 = previous -> dataLayer;
   return previous -> dataLayer;
 }
 
@@ -67,6 +68,7 @@ int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
   while (current -> val < val) {
     count += current -> markedToDelete & 1;
     if (current -> markedToDelete && validateRemoval(previous, current)) {
+      current -> fresh = 0;
       multi_push(mq[numberNumaZones + hazardNode -> id], current);
     }
     hazardNode -> hp0 = current;
@@ -91,6 +93,7 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     while (current -> val < val) {
       count += current -> markedToDelete & 1;
       if (current -> markedToDelete && validateRemoval(previous, current)) {
+        current -> fresh = 0;
         multi_push(mq[numberNumaZones + hazardNode -> id], current);
       }
       hazardNode -> hp0 = current;
@@ -120,8 +123,8 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
       insertion -> next = current;
       insertion -> previous = previous;
 
-      previous -> next = insertion;
       current -> previous = insertion;
+      previous -> next = insertion;
 
       pthread_mutex_unlock(&previous -> lock);
       pthread_mutex_unlock(&current -> lock);
@@ -142,6 +145,7 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     while (current -> val < val) {
       count += current -> markedToDelete & 1;
       if (current -> markedToDelete && validateRemoval(previous, current)) {
+        current -> fresh = 0;
         multi_push(mq[numberNumaZones + hazardNode -> id], current);
       }
       hazardNode -> hp0 = current;
@@ -235,8 +239,10 @@ int removal(multi_queue_t *queue) {
     else {
       multi_push(mq[numberNumaZones + numThreads], target);
     }
+    free(consumer);
     return 1;
   }
+  free(consumer);
   return 0;
 }
 
@@ -260,6 +266,14 @@ inline void constructMQs() {
     mq[i] = constructMultiQueue();
   }
 }
+
+inline void destructMQs() {
+  for (int i = 0; i < numberNumaZones + numThreads + 1; i++) {
+    destructMultiQueue(mq[i]);
+  }
+  free(mq);
+}
+
 
 inline dataLayerThread_t* constructDataLayerThread() {
   dataLayerThread_t* thread = (dataLayerThread_t*)malloc(sizeof(dataLayerThread_t));
@@ -325,6 +339,7 @@ void stopDataLayerHelpers() {
     pthread_join(remover -> runner, NULL);
     remover -> running = 0;
     destructDataLayerThread(remover);
+    destructMQs();
 
     gc -> stopGarbageCollection = 1;
     pthread_join(gc -> reclaimer, NULL);
