@@ -63,9 +63,7 @@ int lazyFind(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
   node_t* previous = getElement(numask -> sentinel, val, hazardNode);
   hazardNode -> hp1 = previous -> next;
   node_t* current = (node_t*)hazardNode -> hp1;
-  int count = 0;
   while (current -> val < val) {
-    count += current -> markedToDelete & 1;
     hazardNode -> hp0 = current;
     previous = (node_t*)hazardNode -> hp0;
     hazardNode -> hp1 = current -> next;
@@ -83,9 +81,7 @@ int lazyAdd(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     node_t* previous = getElement(numask -> sentinel, val, hazardNode);
     hazardNode -> hp1 = previous -> next;
     node_t* current = (node_t*)hazardNode -> hp1;
-    int count = 0;
     while (current -> val < val) {
-      count += current -> markedToDelete & 1;
       hazardNode -> hp0 = current;
       previous = (node_t*)hazardNode -> hp0;
       hazardNode -> hp1 = current -> next;
@@ -130,9 +126,7 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
     node_t* previous = getElement(numask -> sentinel, val, hazardNode);
     hazardNode -> hp1 = previous -> next;
     node_t* current = (node_t*)hazardNode -> hp1;
-    int count = 0;
     while (current -> val < val) {
-      count += current -> markedToDelete & 1;
       hazardNode -> hp0 = current;
       previous = (node_t*)hazardNode -> hp0;
       hazardNode -> hp1 = current -> next;
@@ -150,6 +144,7 @@ int lazyRemove(searchLayer_t* numask, int val, HazardNode_t* hazardNode) {
       }
       current -> markedToDelete = 1;
       if (validateRemoval(previous, current)) {
+        current -> fresh = 0;
         multi_push(mq[numberNumaZones + hazardNode -> id], current);
       }
       else {
@@ -236,16 +231,12 @@ int removal(multi_queue_t *queue) {
 }
 
 void* backgroundRemoval(void* input) {
-  int noHit = 0;
-  int hit = 0;
   dataLayerThread_t* thread = (dataLayerThread_t*)input;
   while (thread -> finished == 0) {
     for (int i = 0; i < numberNumaZones + numThreads + 1; i++) {
-      if (removal(mq[i])) hit++;
-      else noHit++;
+      removal(mq[i]);
     }
   }
-  fprintf(stderr, "No Hit vs Hit: %d vs %d\n", noHit, hit);
   return NULL;
 }
 
@@ -293,18 +284,10 @@ inline void destruct_gc_container(gc_container_t* gc) {
 }
 
 void startDataLayerHelpers(node_t* sentinel) {
-  if (updater == NULL) {
-    updater = constructDataLayerThread();
-  }
-  if (gc == NULL) {
-    gc = construct_gc_container();
-  }
-  if (remover == NULL) {
-    remover = constructDataLayerThread();
-  }
-  if (mq == NULL) {
-    constructMQs();
-  }
+  updater = constructDataLayerThread();
+  gc = construct_gc_container();
+  remover = constructDataLayerThread();
+  constructMQs();
   if (updater -> running == 0) {
     gc -> stopGarbageCollection = 0;
     pthread_create(&gc -> reclaimer, NULL, garbageCollectDataLayer, (void*)gc);
