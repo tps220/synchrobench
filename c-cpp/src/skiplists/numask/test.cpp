@@ -34,6 +34,7 @@
 #include "queue.h"
 #include "search.h"
 #include "allocator.h"
+#include "gc.h"
 
 #define DEFAULT_DURATION                10000
 #define DEFAULT_INITIAL                 1024
@@ -72,6 +73,7 @@ __thread unsigned int *rng_seed;
 pthread_key_t rng_seed_key;
 #endif /* ! TLS */
 unsigned int levelmax;
+extern gc_t* gc;
 
 typedef struct barrier {
 	pthread_cond_t complete;
@@ -222,6 +224,10 @@ void *test(void *data) {
 
 	/* Create transaction */
 	TM_THREAD_ENTER();
+
+	/* Register thread to epoch */
+	gc_register(gc);
+
 	/* Wait on barrier */
 	barrier_cross(d->barrier);
 
@@ -308,9 +314,9 @@ void *test(void *data) {
 	}
 #endif /* ICC */
 
+	gc_unregister(gc);
 	/* Free transaction */
 	TM_THREAD_EXIT();
-
 	return NULL;
 }
 
@@ -501,6 +507,8 @@ int main(int argc, char **argv)
 		srand(seed);
 
 	levelmax = floor_log_2((unsigned int) initial);
+	gc = gc_create(offsetof(node_t, gc_entry), NULL, NULL);
+	gc_register(gc);
 
 	// create sentinel node on NUMA zone 0
 	node_t* sentinel_node = node_new(0, NULL, NULL, NULL);
@@ -573,7 +581,7 @@ int main(int argc, char **argv)
 		if (sl_add_old(search_layers[cur_zone], val, 0)) {
 			last = val;
 			i++;
-			if(i %(initial / 4) == 0 && cur_zone != 3) {
+			if(i %(initial / num_numa_zones) == 0 && cur_zone != num_numa_zones - 1) {
 				numa_run_on_node(++cur_zone);
 			}
 		}
@@ -593,6 +601,7 @@ int main(int argc, char **argv)
 		search_layers[i]->reset_sentinel();
 		search_layers[i]->start_helper(0);
 	}
+
 	for(int i = 0; i < num_numa_zones; ++i) {
 		while(search_layers[i]->get_sentinel()->intermed->level < floor_log_2(initial)){}
 		search_layers[i]->stop_helper();
@@ -793,6 +802,8 @@ int main(int argc, char **argv)
 		search_layers[i]->stop_helper();
 	}
 	pthread_join(dhelper_thread, NULL);
+	gc_unregister(gc);
+	gc_full(gc, 10);
 
 	// Cleanup STM
 	TM_SHUTDOWN();

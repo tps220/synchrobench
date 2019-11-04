@@ -7,6 +7,7 @@
 #define BACKGROUND_H_
 
 #include "skiplist.h"
+#include "gc.h"
 
 // arguments for data-layer-helper thread
 struct bg_dl_args {

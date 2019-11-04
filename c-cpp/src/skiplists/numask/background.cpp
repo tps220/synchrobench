@@ -33,6 +33,8 @@
 #include "search.h"
 #include "queue.h"
 
+extern gc_t* gc;
+
 /**
  * reset_indermediate_levels() - iterates through intermediate level and sets their level to 0
  *  @sl - search layer object for reference
@@ -468,6 +470,7 @@ void bg_remove(node_t* prev, node_t* node) {
 	if(prev->next != node || (prev->key == 0 && prev->prev)) return;
 	CAS(&prev->next, node, ptr->next);
 	assert(prev->next != prev);
+    gc_limbo(gc, node);
 }
 
 extern search_layer** 	search_layers;
@@ -497,6 +500,7 @@ void* data_layer_helper(void* args) {
 	int sleep_time		= data->tsleep;
 	bool* done			= data->done;
 	int cur_numa_zone	= 0;
+    gc_register(gc);
 	while(1) {
 		// sleep & change zones for fairness
 		numa_run_on_node(cur_numa_zone);
@@ -517,13 +521,16 @@ void* data_layer_helper(void* args) {
 				/* only remove short nodes */
 				CAS(&node->val, NULL, node);
 				if(node->val == node)
+					gc_crit_enter(gc);
 					bg_remove(prev, node);
+					gc_crit_exit(gc);
 			}
 			prev = node;
 			node = node->next;
 		}
-
+        //gc_cycle(gc);
 	}
+	gc_unregister(gc);
 	return NULL;
 }
 

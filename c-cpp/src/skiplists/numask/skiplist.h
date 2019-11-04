@@ -9,6 +9,7 @@
 #include <atomic_ops.h>
 
 #include "common.h"
+#include "gc.h"
 
 /* define for search layer and nohotspot address checking
  * 	this is a sanity check to ensure that all memory addresses accessed
@@ -37,6 +38,7 @@ struct sl_node {
 	sl_key_t 			key;
 	volatile uint		level;
 	bool 				fresh;
+	gc_entry_t          gc_entry;
 };
 
 /* index layer nodes */

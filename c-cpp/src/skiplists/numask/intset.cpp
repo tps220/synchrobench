@@ -24,20 +24,31 @@
 #include "search.h"
 #include "intset.h"
 #include "nohotspot_ops.h"
+#include "gc.h"
 
 #define MAXLEVEL    32
+extern gc_t* gc;
 
 int sl_contains_old(search_layer *sl, unsigned int key, int transactional)
 {
-        return sl_contains(sl, (sl_key_t) key);
+		gc_crit_enter(gc);
+        int retval = sl_contains(sl, (sl_key_t) key);
+        gc_crit_exit(gc);
+        return retval;
 }
 
 int sl_add_old(search_layer *sl, unsigned int key, int transactional)
 {
-        return sl_insert(sl, (sl_key_t) key, (val_t) ((long)key));
+		gc_crit_enter(gc);
+        int retval = sl_insert(sl, (sl_key_t) key, (val_t) ((long)key));
+        gc_crit_exit(gc);
+        return retval;
 }
 
 int sl_remove_old(search_layer *sl, unsigned int key, int transactional)
 {
-	return sl_delete(sl, (sl_key_t) key);
+	gc_crit_enter(gc);
+	int retval = sl_delete(sl, (sl_key_t) key);
+	gc_crit_exit(gc);
+	return retval;
 }

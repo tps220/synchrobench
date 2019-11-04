@@ -9,7 +9,13 @@ CXX = g++
 
 all:	main
 
-nohotspot_ops.o: skiplist.h nohotspot_ops.h search.h
+ebr.o: ebr.h utils.h
+	$(CXX) $(CFLAGS) -c -o $(BUILDIR)/ebr.o ebr.c -std=c++11 -I.
+
+gc.o: gc.h ebr.h utils.h
+	$(CXX) $(CFLAGS) -c -o $(BUILDIR)/gc.o gc.c -std=c++11 -I.
+
+nohotspot_ops.o: skiplist.h nohotspot_ops.h search.h gc.h
 	$(CXX) $(CFLAGS) -c -o $(BUILDIR)/nohotspot_ops.o nohotspot_ops.cpp -std=c++11 -I.
 
 skiplist.o: skiplist.h queue.h allocator.h
@@ -21,7 +27,7 @@ queue.o: queue.h
 background.o: background.h skiplist.h search.h
 	$(CXX) $(CFLAGS) -c -o $(BUILDIR)/background.o background.cpp -std=c++11 -I.
 
-intset.o: intset.h nohotspot_ops.h search.h
+intset.o: intset.h nohotspot_ops.h search.h gc.h
 	$(CXX) $(CFLAGS) -c -o $(BUILDIR)/intset.o intset.cpp -std=c++11 -I.
 	
 search.o: search.h skiplist.h queue.h 
@@ -33,8 +39,8 @@ allocator.o: allocator.h
 test.o: intset.h skiplist.h search.h nohotspot_ops.h background.h allocator.h
 	$(CXX) $(CFLAGS) -c -o $(BUILDIR)/test.o test.cpp -std=c++11 -I.
 	
-main: intset.o skiplist.o search.o nohotspot_ops.o test.o background.o allocator.o queue.o
-	$(CXX) $(CFLAGS) $(BUILDIR)/background.o $(BUILDIR)/queue.o $(BUILDIR)/skiplist.o $(BUILDIR)/intset.o $(BUILDIR)/nohotspot_ops.o $(BUILDIR)/search.o $(BUILDIR)/allocator.o $(BUILDIR)/test.o -o $(BINS) -std=c++11 $(LDFLAGS) -I. -lnuma
+main: intset.o skiplist.o search.o nohotspot_ops.o test.o background.o allocator.o queue.o gc.o ebr.o
+	$(CXX) $(CFLAGS) $(BUILDIR)/ebr.o $(BUILDIR)/gc.o $(BUILDIR)/background.o $(BUILDIR)/queue.o $(BUILDIR)/skiplist.o $(BUILDIR)/intset.o $(BUILDIR)/nohotspot_ops.o $(BUILDIR)/search.o $(BUILDIR)/allocator.o $(BUILDIR)/test.o -o $(BINS) -std=c++11 $(LDFLAGS) -I. -lnuma
 	
 clean:
 	-rm -f $(BINS)

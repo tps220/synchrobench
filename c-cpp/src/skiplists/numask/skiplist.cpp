@@ -15,6 +15,7 @@
 #include "allocator.h"
 
 numa_allocator** allocators;
+gc_t* gc;
 
 #define NODE_SZ 	sizeof(node_t)
 #define INODE_SZ	sizeof(inode_t)
