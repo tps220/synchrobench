@@ -10,7 +10,6 @@
  * using the Epoch-based reclamation (EBR) mechanism.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <inttypes.h>
@@ -96,8 +95,7 @@ gc_destroy(gc_t *gc)
 void
 gc_register(gc_t *gc)
 {
-	int retval = ebr_register(gc->ebr);
-	fprintf(stderr, "%d\n", retval);
+	ebr_register(gc->ebr);
 }
 
 void
